@@ -23,7 +23,8 @@ python3 -m venv .venv && .venv/bin/pip install platformio
 .venv/bin/python3 arborisis-release.py     # dist/arborisis_relay_heltec_v3{,_merged}.bin + manifest.json
 ```
 
-Published on Radicle: `rad clone rad:z3M4Q864tTLL7HNsMGtUjRgao1tkE`. GPL-3.0,
+Source: https://github.com/0xmagicduck/arborisis-relay (also announced on Radicle
+as `rad:z3M4Q864tTLL7HNsMGtUjRgao1tkE`). GPL-3.0,
 like RTNode and the RNode firmware it descends from. What follows is upstream's
 README, kept whole.
 
