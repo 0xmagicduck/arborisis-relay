@@ -20,6 +20,7 @@
 
 #ifdef FIREWALL_MODE
 
+#include "Arborisis.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
@@ -74,7 +75,7 @@ static bool config_portal_active = false;
 static WebServer* config_server = nullptr;
 static DNSServer* config_dns    = nullptr;
 
-static const char CONFIG_AP_SSID[] = "RTNode-Setup";
+static const char CONFIG_AP_SSID[] = ARBORISIS_AP_SSID;
 static const uint16_t DNS_PORT = 53;
 static const uint16_t HTTP_PORT = 80;
 
@@ -870,22 +871,8 @@ static void config_handle_save() {
         EEPROM.write(config_addr(ADDR_CONF_LT_AL), lt_byte);
     }
 
-    // Save LoRa config to EEPROM (reuse existing eeprom_conf functions)
-    // Write directly since hw_ready may not be set yet
-    eeprom_update(eeprom_addr(ADDR_CONF_SF), lora_sf);
-    eeprom_update(eeprom_addr(ADDR_CONF_CR), lora_cr);
-    eeprom_update(eeprom_addr(ADDR_CONF_TXP), lora_txp);
-    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 0, lora_bw >> 24);
-    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 1, lora_bw >> 16);
-    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 2, lora_bw >> 8);
-    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 3, lora_bw);
-    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 0, lora_freq >> 24);
-    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 1, lora_freq >> 16);
-    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 2, lora_freq >> 8);
-    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 3, lora_freq);
-    eeprom_update(eeprom_addr(ADDR_CONF_OK), CONF_OK_BYTE);
-
-    EEPROM.commit();
+    // Save LoRa config to EEPROM — shared with the serial configurator.
+    firewall_save_radio_config();
 
     // ── Send confirmation page ──
     String ok = F(
@@ -1012,14 +999,28 @@ void config_portal_start() {
         stat_area.setCursor((64 - (4 * 6)) / 2, 8);
         stat_area.print("MODE");
 
-        stat_area.setCursor((64 - (10 * 6)) / 2, 24);
+        stat_area.setCursor((64 - (10 * 6)) / 2, 20);
         stat_area.print("Connect to");
-        stat_area.setCursor((64 - (10 * 6)) / 2, 32);
+        stat_area.setCursor((64 - (10 * 6)) / 2, 28);
         stat_area.print("Wifi SSID:");
-        stat_area.setCursor((64 - (7 * 6)) / 2, 40);
-        stat_area.print("RTNode-");
-        stat_area.setCursor((64 - (5 * 6)) / 2, 48);
-        stat_area.print("Setup");
+        // The SSID comes from the build profile and does not fit 64 px in
+        // one piece: one line per hyphen-terminated segment, centred, from
+        // y=36 down — "RTNode-" / "Setup" upstream, three lines for
+        // "Arborisis-Relay-Setup".
+        {
+            const char* ssid = CONFIG_AP_SSID;
+            int y = 36;
+            while (*ssid && y <= 56) {
+                const char* dash = strchr(ssid, '-');
+                size_t seg_len = dash ? (size_t)(dash - ssid) + 1 : strlen(ssid);
+                if (seg_len > 10) seg_len = 10;
+                int x = (64 - (int)(seg_len * 6)) / 2;
+                stat_area.setCursor(x < 0 ? 0 : x, y);
+                for (size_t i = 0; i < seg_len; i++) stat_area.write(ssid[i]);
+                ssid += seg_len;
+                y += 8;
+            }
+        }
 
         display.clearDisplay();
         display.drawBitmap(0, 0, stat_area.getBuffer(), stat_area.width(), stat_area.height(), SSD1306_WHITE, SSD1306_BLACK);

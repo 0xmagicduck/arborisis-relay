@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "Arborisis.h"
 #include <ESPmDNS.h>
 #include <WiFi.h>
 
@@ -43,7 +44,7 @@ inline void resolve_hostname(const char* custom, const char* default_suffix,
         normalize_hostname(custom, out, out_size);
     } else {
         char fallback[16];
-        snprintf(fallback, sizeof(fallback), "rtnode%s",
+        snprintf(fallback, sizeof(fallback), ARBORISIS_MDNS_PREFIX "%s",
                  default_suffix != nullptr ? default_suffix : "");
         normalize_hostname(fallback, out, out_size);
     }
@@ -68,7 +69,7 @@ inline bool start_sta(const char* hostname, uint16_t tcp_port) {
     }
     if (tcp_port != 0) {
         MDNS.addService("reticulum", "tcp", tcp_port);
-        MDNS.addServiceTxt("reticulum", "tcp", "kind", "rtnode-heltec");
+        MDNS.addServiceTxt("reticulum", "tcp", "kind", ARBORISIS_MDNS_KIND);
     }
     running = true;
     Serial.print("[mDNS] STA up: ");

@@ -22,6 +22,7 @@
 
 #ifdef FIREWALL_MODE
 
+#include "Arborisis.h"
 #include <Arduino.h>
 #include <Bytes.h>
 #include <Identity.h>
@@ -406,7 +407,7 @@ static RNS::Bytes advertise_build_info() {
         } else {
             const char* hex = (rtc_node_hash_magic == NODE_HASH_RTC_MAGIC && rtc_node_hash_hex[0] != '\0')
                               ? rtc_node_hash_hex : "";
-            snprintf(name_buf, sizeof(name_buf), "RTNode-%.8s", hex[0] ? hex : "unknown");
+            snprintf(name_buf, sizeof(name_buf), ARBORISIS_NAME_PREFIX "%.8s", hex[0] ? hex : "unknown");
             adv_name = name_buf;
         }
         adv_mp_key(packed, ADV_FIELD_NAME);

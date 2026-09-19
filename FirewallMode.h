@@ -14,6 +14,10 @@
 
 #ifdef FIREWALL_MODE
 
+// The build profile (Arborisis Relay, or the upstream defaults) — included
+// first so that it can set FIREWALL_BACKBONE_HOST/PORT below.
+#include "Arborisis.h"
+
 // ─── Firewall Mode Configuration ────────────────────────────────────────────
 //
 // The firmware acts as a LoRa↔TCP bridge/firewall node:
@@ -281,12 +285,15 @@ inline void firewall_load_config() {
         firewall_state.advert_enabled = false;
         firewall_state.advert_lat = 0.0;
         firewall_state.advert_lon = 0.0;
-        firewall_state.advert_jitter = false;
+        // advert_enabled stays false here whatever the profile says: the
+        // announce always carries a position (Advertise.h), and a device
+        // with no coordinates yet would pin itself at 0,0 in the Atlantic.
+        firewall_state.advert_jitter = ARBORISIS_JITTER_DEFAULT;
         firewall_state.node_name[0] = '\0';
-        firewall_state.st_airtime_limit = 0.0f;
-        firewall_state.lt_airtime_limit = 0.0f;
-        st_airtime_limit = 0.0f;
-        lt_airtime_limit = 0.0f;
+        firewall_state.st_airtime_limit = ARBORISIS_ST_AIRTIME_PCT / 100.0f;
+        firewall_state.lt_airtime_limit = ARBORISIS_LT_AIRTIME_PCT / 100.0f;
+        st_airtime_limit = firewall_state.st_airtime_limit;
+        lt_airtime_limit = firewall_state.lt_airtime_limit;
         firewall_state.mdns_enabled = true;
         firewall_state.mdns_hostname[0] = '\0';
         // Mark as enabled since we're compiled with FIREWALL_MODE
@@ -551,6 +558,31 @@ inline void firewall_save_config() {
     EEPROM.write(config_addr(ADDR_CONF_APP_MARKER1), FIREWALL_APP_MARKER1);
     EEPROM.write(config_addr(ADDR_CONF_APP_VERSION), FIREWALL_APP_VERSION);
 
+    EEPROM.commit();
+}
+
+// The radio parameters live in the stock RNode configuration area (the one
+// `eeprom_conf_load()` reads at boot), not in the firewall area above, and
+// they are written directly rather than through `eeprom_conf_save()` because
+// the portal and the serial configurator both run before hw_ready is set.
+// One writer for both entry points: a field forgotten here is forgotten for
+// everyone, instead of for whichever path was edited last.
+// Defined further down Utilities.h — this header is first pulled in from
+// Display.h, above it.
+void eeprom_update(int mapped_addr, uint8_t byte);
+inline void firewall_save_radio_config() {
+    eeprom_update(eeprom_addr(ADDR_CONF_SF), lora_sf);
+    eeprom_update(eeprom_addr(ADDR_CONF_CR), lora_cr);
+    eeprom_update(eeprom_addr(ADDR_CONF_TXP), lora_txp);
+    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 0, lora_bw >> 24);
+    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 1, lora_bw >> 16);
+    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 2, lora_bw >> 8);
+    eeprom_update(eeprom_addr(ADDR_CONF_BW) + 3, lora_bw);
+    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 0, lora_freq >> 24);
+    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 1, lora_freq >> 16);
+    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 2, lora_freq >> 8);
+    eeprom_update(eeprom_addr(ADDR_CONF_FREQ) + 3, lora_freq);
+    eeprom_update(eeprom_addr(ADDR_CONF_OK), CONF_OK_BYTE);
     EEPROM.commit();
 }
 

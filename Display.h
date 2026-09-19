@@ -899,6 +899,9 @@ extern char bt_dh[16];
 #if HAS_WIFI
   extern IPAddress wr_device_ip;
 #endif
+#if defined(FIREWALL_MODE) && defined(ARBORISIS_RELAY)
+#include "RelayDisplay.h"
+#endif
 void draw_disp_area() {
   if (!device_init_done || firmware_update_mode) {
     uint8_t p_by = 37;
@@ -918,7 +921,10 @@ void draw_disp_area() {
     if (firmware_update_mode) disp_area.drawBitmap(0, p_by, bm_fw_update, disp_area.width(), 27, SSD1306_WHITE, SSD1306_BLACK);
   } else {
     if (!disp_ext_fb or bt_ssp_pin != 0) {
-#ifdef FIREWALL_MODE
+#if defined(FIREWALL_MODE) && defined(ARBORISIS_RELAY)
+      // The Arborisis build pages through radio / traffic / node — RelayDisplay.h.
+      relay_draw_disp_area();
+#elif defined(FIREWALL_MODE)
       // ── Firewall Mode display: compact status page ──
       disp_area.fillRect(0, 0, disp_area.width(), disp_area.height(), SSD1306_BLACK);
 
@@ -932,7 +938,7 @@ void draw_disp_area() {
       if (firewall_state.node_name[0] != '\0') {
         disp_area.print(firewall_state.node_name);
       } else {
-        disp_area.print("RTNode");
+        disp_area.print(ARBORISIS_DISPLAY_TITLE);
       }
 
       disp_area.setTextColor(SSD1306_WHITE);

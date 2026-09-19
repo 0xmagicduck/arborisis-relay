@@ -37,6 +37,7 @@
 #include "FirewallConfig.h"
 #include "Advertise.h"
 #include "MdnsService.h"
+#include "SerialConfig.h"
 #include "esp_bt.h"
 #endif
 
@@ -773,6 +774,10 @@ void setup() {
       uint32_t wcc_btn_down_at = 0;
       while (config_portal_is_active()) {
         config_portal_loop();
+        // The page at rns.arborisis.com/relay configures a fresh device
+        // right here, over USB, while the access point waits for nobody.
+        serial_config_poll();
+        serial_config_housekeeping();
 
         // Headless LED: slow ramp breathe effect during WCC mode
         headless_led_ramp();
@@ -1795,6 +1800,11 @@ void transmit(uint16_t size) {
 }
 
 void serial_callback(uint8_t sbyte) {
+#ifdef FIREWALL_MODE
+  // Outside a KISS frame, the line is text: the serial configurator's
+  // (SerialConfig.h). Upstream dropped these bytes on the floor.
+  if (!IN_FRAME && sbyte != FEND) { serial_config_feed(sbyte); return; }
+#endif
   if (IN_FRAME && sbyte == FEND && command == CMD_DATA) {
     IN_FRAME = false;
 
@@ -2584,12 +2594,12 @@ void validate_status() {
         eeprom_conf_load();
         Serial.write("[Boundary] Loaded LoRa config from EEPROM\r\n");
       } else {
-        // Use sensible defaults if no config saved yet
-        lora_freq = 914875000;
-        lora_bw   = 125000;
-        lora_sf   = 10;
-        lora_cr   = 5;
-        lora_txp  = 28;
+        // No config saved yet: the channel of the build profile (Arborisis.h)
+        lora_freq = ARBORISIS_LORA_FREQ_HZ;
+        lora_bw   = ARBORISIS_LORA_BW_HZ;
+        lora_sf   = ARBORISIS_LORA_SF;
+        lora_cr   = ARBORISIS_LORA_CR;
+        lora_txp  = ARBORISIS_LORA_TXP_DBM;
         Serial.write("[Boundary] No LoRa config in EEPROM, using defaults\r\n");
       }
       // Always log the active channel config so tests/diagnostics can verify it
@@ -2598,10 +2608,12 @@ void validate_status() {
           (unsigned)lora_sf, (unsigned)lora_cr, (unsigned)lora_txp);
 
       op_mode = MODE_TNC;
-      // In FIREWALL_MODE (US915) there are no duty-cycle regulations;
-      // disable interference avoidance so CSMA does not block TX due to
-      // ambient non-LoRa RF energy on the 914 MHz band.
-      avoid_interference = false;
+      // Upstream (US915): no duty-cycle regulations, so interference
+      // avoidance is off and CSMA never blocks TX on ambient non-LoRa RF.
+      // An EU868 profile keeps the RNode default on: the sub-band is shared
+      // under a duty-cycle rule, and listening before talking is part of
+      // sharing it. The profile decides (Arborisis.h).
+      avoid_interference = ARBORISIS_AVOID_INTERFERENCE;
       startRadio();
     } else {
       hw_ready = false;
@@ -2771,6 +2783,8 @@ void loop() {
   if (reticulum) {
     advertise_loop();
   }
+  // Deferred reboot after a `set` over serial, once the reply has left.
+  serial_config_housekeeping();
 #endif
 
 #ifdef FIREWALL_MODE
@@ -3136,6 +3150,10 @@ void button_event(uint8_t event, unsigned long duration) {
         #endif
       } else {
         display_unblank();
+        #if defined(ARBORISIS_RELAY) && HAS_DISPLAY
+          // A short press also turns the page (RelayDisplay.h).
+          relay_display_next_page();
+        #endif
       }
       #else
       // Standard RNode button mapping

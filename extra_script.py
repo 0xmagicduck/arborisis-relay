@@ -4,7 +4,11 @@ import shutil
 
 Import("env")
 
-env.Replace(PROGNAME="rtnode_%s" % env.GetProjectOption("custom_variant"))
+# `custom_family` names the firmware (rtnode by default, arborisis_relay for
+# the Arborisis envs) so that both can live in the same build tree and the
+# web flasher never confuses one for the other.
+env.Replace(PROGNAME="%s_%s" % (env.GetProjectOption("custom_family", "rtnode"),
+                                 env.GetProjectOption("custom_variant")))
 print("PROGNAME:", env.subst("$PROGNAME"))
 
 #

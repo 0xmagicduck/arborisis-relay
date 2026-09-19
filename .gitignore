@@ -44,3 +44,7 @@ Console/build
 build/*
 .pio/*
 .vscode/*
+
+# Arborisis Relay: local toolchain and release output
+.venv/
+dist/
