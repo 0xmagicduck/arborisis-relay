@@ -1,3 +1,34 @@
+# Arborisis Relay
+
+The [RTNode](https://github.com/jrl290/RTNode-HeltecV4) firmware, built for the
+**Arborisis Belgium** Reticulum network (https://rns.arborisis.com): a Heltec
+WiFi LoRa 32 V3 flashed with it comes up on 869.525 MHz / 125 kHz / SF8 / CR 4/5,
+uplinked to `rns.arborisis.com:4242`, within the EU sub-band's 10 % airtime
+budget — and lets a web page configure it over USB.
+
+Everything that differs from upstream is a macro in [`Arborisis.h`](Arborisis.h)
+(`-DARBORISIS_RELAY`, environments `arborisis_heltec_v3` / `_v4`); the upstream
+environments still build unchanged. Three files are new:
+
+| File | What it adds |
+|---|---|
+| `Arborisis.h` | the profile: channel, gateway, names, airtime budget, defaults |
+| `SerialConfig.h` | a JSON configurator on the serial port (`ARB {"cmd":"hello"}` …), which [rns.arborisis.com/relay](https://rns.arborisis.com/relay) drives over Web Serial |
+| `RelayDisplay.h` | the OLED in three pages: radio, traffic, node |
+| `arborisis-release.py` | `dist/` — the images and a `manifest.json` with their SHA-256 |
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install platformio
+.venv/bin/pio run -e arborisis_heltec_v3
+.venv/bin/python3 arborisis-release.py     # dist/arborisis_relay_heltec_v3{,_merged}.bin + manifest.json
+```
+
+Published on Radicle: `rad clone rad:z3M4Q864tTLL7HNsMGtUjRgao1tkE`. GPL-3.0,
+like RTNode and the RNode firmware it descends from. What follows is upstream's
+README, kept whole.
+
+---
+
 # RTNode-HeltecV4 — Reticulum Transport Node for Heltec WiFi LoRa 32 V4 (with support for V3)
 
 A custom firmware for the **Heltec WiFi LoRa 32 V4** (ESP32-S3 + SX1262) that operates as a **Transport Node** — bridging a local LoRa radio network with a remote TCP/IP backbone (such as [rmap.world](https://rmap.world)) over WiFi.
