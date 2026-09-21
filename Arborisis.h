@@ -36,7 +36,7 @@
 
 // Bump on every release published to rns.arborisis.com/relay; the
 // configurator shows it, and manifest.json carries it next to the SHA-256.
-#define ARBORISIS_RELAY_VERSION   "0.1.0"
+#define ARBORISIS_RELAY_VERSION   "0.2.0"
 #define ARBORISIS_RELAY_NAME      "Arborisis Relay"
 
 // --- The channel ------------------------------------------------------------
@@ -55,11 +55,17 @@
 #define ARBORISIS_LT_AIRTIME_PCT  10.0f
 #define ARBORISIS_AVOID_INTERFERENCE true
 
-// --- The gateway ------------------------------------------------------------
-// Backbone slot 1 on a fresh device. The configurator lets a relay operator
-// add slots (a second gateway, a local rnsd) but never needs to type this one.
+// --- The gateways -----------------------------------------------------------
+// Backbone slots 1 and 2 on a fresh device: the network's two nodes, which
+// live on two machines behind two tunnels and hold a wire to each other. A
+// relay with both keeps a road into the network when the machine behind
+// either is off — the reason the second node exists, and what our own radio
+// does since 2026-09-21. The configurator lets a relay operator change or
+// add slots (a local rnsd, say) but never needs to type these two.
 #define ARBORISIS_BACKBONE_HOST   "rns.arborisis.com"
 #define ARBORISIS_BACKBONE_PORT   4242
+#define ARBORISIS_BACKBONE2_HOST  "rns2.arborisis.com"
+#define ARBORISIS_BACKBONE2_PORT  4242
 
 // --- Names ------------------------------------------------------------------
 // The open access point of the captive portal (the fallback for anyone

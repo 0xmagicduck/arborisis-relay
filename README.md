@@ -3,7 +3,9 @@
 The [RTNode](https://github.com/jrl290/RTNode-HeltecV4) firmware, built for the
 **Arborisis Belgium** Reticulum network (https://rns.arborisis.com): a Heltec
 WiFi LoRa 32 V3 flashed with it comes up on 869.525 MHz / 125 kHz / SF8 / CR 4/5,
-uplinked to `rns.arborisis.com:4242`, within the EU sub-band's 10 % airtime
+uplinked to `rns.arborisis.com:4242` and `rns2.arborisis.com:4242` — the
+network's two nodes, on two machines, so the relay keeps a road when either
+is off —, within the EU sub-band's 10 % airtime
 budget — and lets a web page configure it over USB.
 
 Everything that differs from upstream is a macro in [`Arborisis.h`](Arborisis.h)

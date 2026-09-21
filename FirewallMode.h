@@ -275,6 +275,16 @@ inline void firewall_load_config() {
             sizeof(firewall_state.backbones[0].host) - 1);
         firewall_state.backbones[0].host[sizeof(firewall_state.backbones[0].host) - 1] = '\0';
         firewall_state.backbones[0].port = FIREWALL_BACKBONE_PORT;
+#if defined(ARBORISIS_RELAY) && defined(ARBORISIS_BACKBONE2_HOST) && FIREWALL_BACKBONE_SLOTS > 1
+        // The second node, in slot 2, as enabled as the first: one relay,
+        // two doors (see Arborisis.h). Only on a fresh device — a saved
+        // configuration is the operator's list, and stays so.
+        firewall_state.backbones[1].enabled = (FIREWALL_TCP_MODE == 1);
+        strncpy(firewall_state.backbones[1].host, ARBORISIS_BACKBONE2_HOST,
+            sizeof(firewall_state.backbones[1].host) - 1);
+        firewall_state.backbones[1].host[sizeof(firewall_state.backbones[1].host) - 1] = '\0';
+        firewall_state.backbones[1].port = ARBORISIS_BACKBONE2_PORT;
+#endif
         firewall_state.ap_tcp_enabled = false;
         firewall_state.ap_tcp_port = 4242;
         firewall_state.ap_ssid[0] = '\0';

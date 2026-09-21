@@ -240,6 +240,18 @@ static void serial_config_reply_state(const char* type, bool with_identity) {
         def["airtime_long_pct"] = ARBORISIS_LT_AIRTIME_PCT;
         def["backbone_host"] = FIREWALL_BACKBONE_HOST;
         def["backbone_port"] = FIREWALL_BACKBONE_PORT;
+        // The full list the profile ships, for a page that has to rebuild
+        // it (a device with every slot cleared). `backbone_host`/`_port`
+        // above stay for the page that only knows the first.
+        JsonArray defbb = def["backbones"].to<JsonArray>();
+        JsonObject bb1 = defbb.add<JsonObject>();
+        bb1["host"] = FIREWALL_BACKBONE_HOST;
+        bb1["port"] = FIREWALL_BACKBONE_PORT;
+#ifdef ARBORISIS_BACKBONE2_HOST
+        JsonObject bb2 = defbb.add<JsonObject>();
+        bb2["host"] = ARBORISIS_BACKBONE2_HOST;
+        bb2["port"] = ARBORISIS_BACKBONE2_PORT;
+#endif
         def["advertise"] = ARBORISIS_ADVERT_DEFAULT;
         def["jitter"] = ARBORISIS_JITTER_DEFAULT;
     }
