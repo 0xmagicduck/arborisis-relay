@@ -114,6 +114,14 @@
   #define MODEL_11            0x11 // RAK4631, 433 Mhz
   #define MODEL_12            0x12 // RAK4631, 868 Mhz
 
+  // Seeed Studio Wio Tracker L1 / L1 Pro (nRF52840 + SX1262 + L76K GNSS).
+  // Codes of this tree, not upstream's: rnodeconf lists the model as unknown
+  // and everything else about the device as usual.
+  #define PRODUCT_WIO_TRACKER_L1 0x18
+  #define BOARD_WIO_TRACKER_L1   0x52
+  #define MODEL_19            0x19 // Wio Tracker L1, 433 MHz
+  #define MODEL_1A            0x1A // Wio Tracker L1, 863-928 MHz
+
   #define PRODUCT_HMBRW       0xF0
   #define BOARD_HMBRW         0x32
   #define BOARD_HUZZAH32      0x34
@@ -140,7 +148,7 @@
   #endif
 
   #ifndef MODEM
-    #if BOARD_MODEL == BOARD_RAK4631
+    #if BOARD_MODEL == BOARD_RAK4631 || BOARD_MODEL == BOARD_WIO_TRACKER_L1
       #define MODEM SX1262
     #elif BOARD_MODEL == BOARD_GENERIC_NRF52
       #define MODEM SX1262
@@ -168,7 +176,11 @@
   #define HAS_LORA_PA false
   #define HAS_LORA_LNA false
   #define PIN_DISP_SLEEP -1
-  #define VALIDATE_FIRMWARE true
+  // A build that is flashed by drag-and-drop (a UF2, say) has no rnodeconf
+  // pass to record the firmware hash; such a build turns this off.
+  #ifndef VALIDATE_FIRMWARE
+    #define VALIDATE_FIRMWARE true
+  #endif
 
   #if defined(ENABLE_TCXO)
       #define HAS_TCXO true
@@ -779,6 +791,61 @@
       const int pin_led_rx = LED_BLUE;
       const int pin_led_tx = LED_GREEN;
       const int pin_tcxo_enable = -1;
+
+    #elif BOARD_MODEL == BOARD_WIO_TRACKER_L1
+      // Seeed Studio Wio Tracker L1 / L1 Pro. Pin numbers are the nRF52840's
+      // (port * 32 + pin); the variant's digital map is the identity. The
+      // assignment is the vendor's, as Meshtastic's seeed_wio_tracker_L1
+      // variant carries it — see variants/wio_tracker_l1/variant.h.
+      #define MODEM SX1262
+      #define HAS_EEPROM false
+      #define HAS_DISPLAY true
+      #define HAS_BLUETOOTH false
+      #define HAS_BLE true
+      #define HAS_CONSOLE false
+      #define HAS_PMU true
+      #define HAS_NP false
+      #define HAS_SD false
+      #define HAS_TCXO true
+      #define HAS_RF_SWITCH_RX_TX true
+      #define HAS_BUSY true
+      #define HAS_INPUT true
+      #define HAS_SLEEP true
+      #define HAS_GNSS true
+      #define HAS_BUZZER true
+      #define DIO2_AS_RF_SWITCH true
+      #define CONFIG_UART_BUFFER_SIZE 6144
+      #define CONFIG_QUEUE_SIZE 6144
+      #define CONFIG_QUEUE_MAX_LENGTH 200
+      #define EEPROM_SIZE 296
+      #define EEPROM_OFFSET EEPROM_SIZE-EEPROM_RESERVED
+      #define BLE_MANUFACTURER "Seeed Studio"
+      #define BLE_MODEL "Wio Tracker L1"
+      // The bootloader carries SoftDevice S140 7.x: the application starts
+      // one flash page later than with the 6.x the other nRF52 boards run.
+      #define APPLICATION_START 0x27000
+
+      const int pin_btn_usr1 = 8;     // P0.08, to ground
+
+      // SX1262
+      const int pin_rxen = 40;        // P1.08 "LORA_SW"
+      const int pin_txen = -1;
+      const int pin_reset = 39;       // P1.07
+      const int pin_cs = 46;          // P1.14
+      const int pin_sclk = 30;        // P0.30
+      const int pin_mosi = 28;        // P0.28
+      const int pin_miso = 3;         // P0.03
+      const int pin_busy = 42;        // P1.10
+      const int pin_dio = 7;          // P0.07 DIO1
+      const int pin_tcxo_enable = -1; // DIO3 feeds the TCXO
+
+      // One LED, active high; RX and TX share it.
+      const int pin_led_rx = 33;      // P1.01
+      const int pin_led_tx = 33;
+      const int pin_buzzer = 32;      // P1.00
+
+      // L76K GNSS on Serial1 (P0.26 / P0.27); low on STANDBY puts it to sleep.
+      const int pin_gnss_standby = 41; // P1.09
 
     #elif BOARD_MODEL == BOARD_TECHO
       #define _PINNUM(port, pin) ((port) * 32 + (pin))

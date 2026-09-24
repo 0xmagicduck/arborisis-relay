@@ -1,29 +1,79 @@
 # Arborisis Relay
 
 The [RTNode](https://github.com/jrl290/RTNode-HeltecV4) firmware, built for the
-**Arborisis Belgium** Reticulum network (https://rns.arborisis.com): a Heltec
-WiFi LoRa 32 V3 flashed with it comes up on 869.525 MHz / 125 kHz / SF8 / CR 4/5,
-uplinked to `rns.arborisis.com:4242` and `rns2.arborisis.com:4242` — the
-network's two nodes, on two machines, so the relay keeps a road when either
-is off —, within the EU sub-band's 10 % airtime
-budget — and lets a web page configure it over USB.
+**Arborisis Belgium** Reticulum network (https://rns.arborisis.com), as two
+images from one tree:
+
+- **Arborisis Relay** — a Heltec WiFi LoRa 32 V3 (or V4) flashed with it comes
+  up on 869.525 MHz / 125 kHz / SF8 / CR 4/5, uplinked to `rns.arborisis.com:4242`
+  and `rns2.arborisis.com:4242` — the network's two nodes, on two machines, so
+  the relay keeps a road when either is off —, within the EU sub-band's 10 %
+  airtime budget — and lets a web page configure it over USB.
+- **Arborisis Pocket** — a Seeed Studio Wio Tracker L1 Pro (nRF52840, SX1262,
+  OLED, battery, GNSS) flashed with it is an RNode for Sideband over Bluetooth
+  or USB that is on the network's channel out of the box, and a Reticulum
+  transport node on its own when nothing is attached: a pocket-sized repeater
+  for the phones around it. It provisions itself at first boot, so a UF2
+  dropped on the bootloader's USB drive is the whole installation — no
+  `rnodeconf` pass.
 
 Everything that differs from upstream is a macro in [`Arborisis.h`](Arborisis.h)
-(`-DARBORISIS_RELAY`, environments `arborisis_heltec_v3` / `_v4`); the upstream
-environments still build unchanged. Three files are new:
+(`-DARBORISIS_RELAY`, environments `arborisis_heltec_v3` / `_v4`;
+`-DARBORISIS_POCKET`, environment `arborisis_pocket_l1`); the upstream
+environments still build unchanged, and `wio_tracker_l1` builds the stock
+RNode for the Seeed board. These files are new:
 
 | File | What it adds |
 |---|---|
-| `Arborisis.h` | the profile: channel, gateway, names, airtime budget, defaults |
-| `SerialConfig.h` | a JSON configurator on the serial port (`ARB {"cmd":"hello"}` …), which [rns.arborisis.com/relay](https://rns.arborisis.com/relay) drives over Web Serial |
-| `RelayDisplay.h` | the OLED in three pages: radio, traffic, node |
-| `arborisis-release.py` | `dist/` — the images and a `manifest.json` with their SHA-256 |
+| `Arborisis.h` | the profile: channel, gateway, names, airtime budget, defaults, for both images |
+| `SerialConfig.h` | a JSON configurator on the relay's serial port (`ARB {"cmd":"hello"}` …), which [rns.arborisis.com/relay](https://rns.arborisis.com/relay) drives over Web Serial |
+| `RelayDisplay.h` | the OLED in three pages: radio, traffic, node — the relay's and the pocket's |
+| `ArborisisPocket.h` | the pocket's first boot: ROM provisioning, the channel preset |
+| `boards/wio_tracker_l1.json`, `variants/wio_tracker_l1/` | the Wio Tracker L1 board for PlatformIO: pin map, SoftDevice 7.x linker script |
+| `arborisis-release.py` | `dist/` — the images (`.bin` for the relay, `.uf2` and DFU `.zip` for the pocket) and a `manifest.json` with their SHA-256 |
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install platformio
-.venv/bin/pio run -e arborisis_heltec_v3
-.venv/bin/python3 arborisis-release.py     # dist/arborisis_relay_heltec_v3{,_merged}.bin + manifest.json
+.venv/bin/pio run -e arborisis_heltec_v3 -e arborisis_pocket_l1
+.venv/bin/python3 arborisis-release.py     # dist/arborisis_relay_heltec_v3{,_merged}.bin,
+                                           # dist/arborisis_pocket_wio_tracker_l1{.uf2,_dfu.zip} + manifest.json
 ```
+
+## The serial configurator (relay)
+
+One JSON object per line, prefixed `ARB `, on the USB port, next to the KISS
+frames — the page filters replies the same way. Commands: `hello` (identity,
+defaults — the channel, the TX power ceiling of this board, the ten
+bandwidths the SX1262 knows —, configuration, status), `get`, `set` (validated
+whole, then saved and rebooted; a refused field is named, nothing is
+written), `reboot`, `portal` (reboot into the captive portal) and
+`factory_reset` (forget every setting and the channel, keep the transport
+identity). Names and passphrases may be UTF-8; the status carries the WiFi
+RSSI and the lowest heap seen since boot.
+
+## The pocket (Wio Tracker L1 Pro)
+
+Flashing: double-press RESET, a USB drive appears, drop
+`arborisis_pocket_wio_tracker_l1.uf2` on it (or `adafruit-nrfutil dfu serial
+--package arborisis_pocket_wio_tracker_l1_dfu.zip --port /dev/ttyACM0`). The
+first boot writes the ROM — product, model, serial from the chip ID, checksum,
+lock — and the network's channel, then starts the transport; the OLED shows
+the channel, the Bluetooth state, the airtime, the traffic and the node's
+identity, five seconds a page. The button is the RNode's: a short press turns
+Bluetooth on or off, a press over five seconds allows pairing (the PIN is on
+the screen), a press over 0.7 s sleeps the device (any press wakes it). Pair
+it in Sideband as an RNode over BLE, or plug it in over USB: the phone can
+change every radio parameter, and `rnodeconf --eeprom-wipe` brings the device
+back to its first boot. The GNSS receiver is held in standby: an RNode has no
+use for it, and the battery does.
+
+Pin assignment, board codes (product `0x18`, model `0x1A`) and the SoftDevice
+7.x memory layout are in `Boards.h`, `variants/wio_tracker_l1/` and
+`boards/wio_tracker_l1.json`; the layout is the one Meshtastic's
+`seeed_wio_tracker_L1` variant carries, which is the vendor's. Untested on
+hardware at the time of writing: the build links at the right address and
+the peripherals are the vendor's, but nobody has held one yet — say so in
+the issue if you have.
 
 Source: https://github.com/0xmagicduck/arborisis-relay (also announced on Radicle
 as `rad:z3M4Q864tTLL7HNsMGtUjRgao1tkE`). GPL-3.0,

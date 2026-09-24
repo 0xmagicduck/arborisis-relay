@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 #include <deque>
+#include <algorithm>
 #include <set>
 #include <string>
 

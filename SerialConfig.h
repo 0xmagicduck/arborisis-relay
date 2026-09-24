@@ -22,6 +22,8 @@
 //   ARB {"cmd":"get"}                  → config + status
 //   ARB {"cmd":"set", ...fields...}    → validates, saves, {"ok":true}, reboots
 //   ARB {"cmd":"reboot"}
+//   ARB {"cmd":"portal"}               → reboots into the captive portal
+//   ARB {"cmd":"factory_reset"}        → forgets every setting, reboots into it
 //
 // Why a prefix and not bare JSON: the same serial line carries the RNode
 // KISS protocol (binary frames delimited by 0xC0) and a stream of free-text
@@ -71,6 +73,9 @@ extern char     rtc_node_hash_hex[33];
 
 extern bool wifi_is_connected();
 bool config_portal_is_active();
+// Defined in RNode_Firmware.ino next to the RTC flag it sets: the next boot
+// goes to the captive portal, as a long press of the PRG button would.
+void boundary_request_config_portal();
 
 static char     serial_config_line[SERIAL_CONFIG_LINE_MAX];
 static size_t   serial_config_len = 0;
@@ -87,6 +92,33 @@ static const char* serial_config_board() {
 #else
     return "unknown";
 #endif
+}
+
+// The highest TX power a `set` accepts, in dBm. The V3's SX1262 stops at
+// 22; the V4's PA goes to 28 but the profile clamps it (Arborisis.h).
+// Refuse rather than clamp, so the page learns the ceiling instead of
+// showing a number the radio is not emitting.
+static int serial_config_txp_ceiling() {
+    int ceiling = 28;
+#if BOARD_MODEL == BOARD_HELTEC32_V3
+    ceiling = 22;
+#endif
+#ifdef ARBORISIS_RELAY
+    if (ceiling > ARBORISIS_LORA_TXP_DBM) ceiling = ARBORISIS_LORA_TXP_DBM;
+#endif
+    return ceiling;
+}
+
+// The SX1262 knows ten bandwidths and nothing in between: the driver
+// rounds anything else up to the next one, and the airtime and CSMA
+// arithmetic then run on a figure the radio is not using.
+static const uint32_t SERIAL_CONFIG_BW_HZ[] = {
+    7800, 10400, 15600, 20800, 31250, 41700, 62500, 125000, 250000, 500000,
+};
+
+static bool serial_config_bw_ok(uint32_t bw) {
+    for (uint32_t known : SERIAL_CONFIG_BW_HZ) if (bw == known) return true;
+    return false;
 }
 
 static void serial_config_send(JsonDocument& doc) {
@@ -181,10 +213,18 @@ static void serial_config_fill_status(JsonObject st) {
     st["mode"] = config_portal_is_active() ? "portal" : "run";
     st["uptime_s"] = millis() / 1000;
     st["free_heap"] = ESP.getFreeHeap();
+    st["min_free_heap"] = ESP.getMinFreeHeap();
     st["radio_online"] = radio_online;
     st["wifi_connected"] = firewall_state.wifi_connected;
-    if (firewall_state.wifi_connected) st["ip"] = WiFi.localIP().toString();
-    else st["ip"] = nullptr;
+    if (firewall_state.wifi_connected) {
+        st["ip"] = WiFi.localIP().toString();
+        // A rooftop relay is placed where the radio is good and the WiFi
+        // is marginal; the page can say so before the link drops.
+        st["wifi_rssi"] = WiFi.RSSI();
+    } else {
+        st["ip"] = nullptr;
+        st["wifi_rssi"] = nullptr;
+    }
 
     JsonArray bbs = st["backbones"].to<JsonArray>();
     for (size_t i = 0; i < FIREWALL_BACKBONE_SLOTS; i++) {
@@ -237,6 +277,9 @@ static void serial_config_reply_state(const char* type, bool with_identity) {
         def["spreading_factor"] = ARBORISIS_LORA_SF;
         def["coding_rate"] = ARBORISIS_LORA_CR;
         def["txpower_dbm"] = ARBORISIS_LORA_TXP_DBM;
+        def["txpower_max_dbm"] = serial_config_txp_ceiling();
+        JsonArray bws = def["bandwidths_hz"].to<JsonArray>();
+        for (uint32_t bw : SERIAL_CONFIG_BW_HZ) bws.add(bw);
         def["airtime_long_pct"] = ARBORISIS_LT_AIRTIME_PCT;
         def["backbone_host"] = FIREWALL_BACKBONE_HOST;
         def["backbone_port"] = FIREWALL_BACKBONE_PORT;
@@ -262,10 +305,21 @@ static void serial_config_reply_state(const char* type, bool with_identity) {
 
 // ─── Writing the configuration ───────────────────────────────────────────────
 
+// Copies at most dst_len - 1 bytes, and never cuts a UTF-8 sequence in
+// half: a name like "Liège" that lands on the limit loses the whole
+// accented letter, not its first byte — which would leave a string that no
+// JSON encoder or browser can display.
 static void serial_config_copy_str(char* dst, size_t dst_len, JsonVariantConst v) {
     const char* s = v.as<const char*>();
     memset(dst, 0, dst_len);
-    if (s) strncpy(dst, s, dst_len - 1);
+    if (!s) return;
+    size_t n = strlen(s);
+    if (n > dst_len - 1) {
+        n = dst_len - 1;
+        // Back off over continuation bytes (10xxxxxx) to the last lead byte.
+        while (n > 0 && ((uint8_t)s[n] & 0xC0) == 0x80) n--;
+    }
+    memcpy(dst, s, n);
 }
 
 static void serial_config_write_eeprom_string(int addr, const char* s, size_t field_len) {
@@ -290,7 +344,11 @@ static bool json_has(JsonObjectConst o, const char* key) {
 static bool json_str_ok(JsonVariantConst v, size_t max) {
     if (v.isNull()) return true;
     const char* s = v.as<const char*>();
-    return s != nullptr && strlen(s) <= max;
+    if (s == nullptr || strlen(s) > max) return false;
+    // No control characters: a name with a newline in it breaks the one
+    // line per message that this protocol is built on, both ways.
+    for (const char* c = s; *c; c++) if ((uint8_t)*c < 0x20 || *c == 0x7F) return false;
+    return true;
 }
 
 // Returns nullptr on success, or the name of the field that was refused.
@@ -309,6 +367,15 @@ static const char* serial_config_apply(JsonObjectConst in) {
             // WPA2 wants 8 to 63; the EEPROM field stops at 32. Empty = open network.
             size_t n = strlen(wifi["psk"].as<const char*>());
             if (n > 0 && n < 8) return "wifi.psk";
+        }
+        // WiFi on with no network to join is a relay that reconnects to
+        // nothing forever, and a page that cannot tell why: refuse it.
+        bool will_enable = wifi["enabled"].isNull() ? firewall_state.wifi_enabled : wifi["enabled"].as<bool>();
+        if (will_enable) {
+            char ssid[33];
+            if (!wifi["ssid"].isNull()) serial_config_copy_str(ssid, sizeof(ssid), wifi["ssid"]);
+            else serial_config_read_eeprom_string(ADDR_CONF_SSID, ssid, sizeof(ssid));
+            if (ssid[0] == '\0') return "wifi.ssid";
         }
     }
 
@@ -366,8 +433,7 @@ static const char* serial_config_apply(JsonObjectConst in) {
             if (f < 137000000UL || f > 1020000000UL) return "radio.frequency_hz";
         }
         if (!radio["bandwidth_hz"].isNull()) {
-            uint32_t bw = radio["bandwidth_hz"].as<uint32_t>();
-            if (bw < 7800UL || bw > 500000UL) return "radio.bandwidth_hz";
+            if (!serial_config_bw_ok(radio["bandwidth_hz"].as<uint32_t>())) return "radio.bandwidth_hz";
         }
         if (!radio["spreading_factor"].isNull()) {
             int sf = radio["spreading_factor"].as<int>();
@@ -379,18 +445,7 @@ static const char* serial_config_apply(JsonObjectConst in) {
         }
         if (!radio["txpower_dbm"].isNull()) {
             int txp = radio["txpower_dbm"].as<int>();
-            // The V3's SX1262 stops at 22; the V4's PA goes to 28 but the
-            // profile clamps it (Arborisis.h). Refuse rather than clamp, so
-            // the page learns the ceiling instead of showing a number the
-            // radio is not emitting.
-            int ceiling = 28;
-#if BOARD_MODEL == BOARD_HELTEC32_V3
-            ceiling = 22;
-#endif
-#ifdef ARBORISIS_RELAY
-            if (ceiling > ARBORISIS_LORA_TXP_DBM) ceiling = ARBORISIS_LORA_TXP_DBM;
-#endif
-            if (txp < 2 || txp > ceiling) return "radio.txpower_dbm";
+            if (txp < 2 || txp > serial_config_txp_ceiling()) return "radio.txpower_dbm";
         }
         for (const char* k : {"airtime_short_pct", "airtime_long_pct"}) {
             if (!radio[k].isNull()) {
@@ -520,6 +575,37 @@ static void serial_config_handle_line(const char* line) {
         reply["type"] = "rebooting";
         serial_config_send(reply);
         serial_config_reboot_at = millis() + 300;
+    } else if (strcmp(cmd, "portal") == 0) {
+        // The captive portal, for the page to hand over to when Web Serial
+        // is not enough (a static IP, say): the same road as the long press.
+        boundary_request_config_portal();
+        JsonDocument reply;
+        reply["ok"] = true;
+        reply["type"] = "rebooting";
+        reply["portal"] = true;
+        serial_config_send(reply);
+        serial_config_reboot_at = millis() + 300;
+    } else if (strcmp(cmd, "factory_reset") == 0) {
+        // Forget the operator's settings, the WiFi credentials and the
+        // channel; the next boot is a fresh device's, in the portal, with
+        // the profile's defaults. The transport identity lives in the
+        // filesystem and is kept: the relay stays the same node on the map.
+        firewall_clear_app_marker();
+        serial_config_write_eeprom_string(ADDR_CONF_SSID, "", 33);
+        serial_config_write_eeprom_string(ADDR_CONF_PSK, "", 33);
+        for (int i = 0; i < 4; i++) {
+            EEPROM.write(config_addr(ADDR_CONF_IP + i), 0x00);
+            EEPROM.write(config_addr(ADDR_CONF_NM + i), 0x00);
+        }
+        EEPROM.write(eeprom_addr(ADDR_CONF_WIFI), WR_WIFI_OFF);
+        EEPROM.commit();
+        eeprom_conf_delete();
+        JsonDocument reply;
+        reply["ok"] = true;
+        reply["type"] = "rebooting";
+        reply["portal"] = true;
+        serial_config_send(reply);
+        serial_config_reboot_at = millis() + 300;
     } else {
         serial_config_error("unknown_cmd", cmd);
     }
@@ -540,10 +626,12 @@ inline void serial_config_feed(uint8_t c) {
     }
     if (serial_config_overflow) return;
     if (serial_config_len + 1 >= SERIAL_CONFIG_LINE_MAX) { serial_config_overflow = true; return; }
-    // Text only. A stray binary byte that is not a frame delimiter (a
-    // KISS escape at the very start of a stream, say) is dropped, so it
-    // cannot poison the line that follows.
-    if (c < 0x20 || c > 0x7E) return;
+    // Text only: ASCII and UTF-8 (a name may well be "Liège"). A control
+    // byte that is not a line end — a KISS escape at the very start of a
+    // stream, say — is dropped, so it cannot poison the line that follows.
+    // No byte of a KISS frame reaches here (serial_callback), and 0xC0
+    // never occurs in UTF-8, so a frame delimiter cannot be mistaken for text.
+    if (c < 0x20 || c == 0x7F) return;
     serial_config_line[serial_config_len++] = (char)c;
 }
 

@@ -113,6 +113,8 @@ def device_provision(env):
         env.Execute("rnodeconf --product 10 --model 12 --hwrev 1 --rom " + env.subst("$UPLOAD_PORT"))
     elif variant in ("heltec_t114", "heltec_t114_local"):
         env.Execute("rnodeconf --product c2 --model c7 --hwrev 1 --rom " + env.subst("$UPLOAD_PORT"))
+    elif variant in ("wio_tracker_l1",):
+        env.Execute("rnodeconf --product 18 --model 1a --hwrev 1 --rom " + env.subst("$UPLOAD_PORT"))
 
 def firmware_hash(source, env):
     # Firmware hash

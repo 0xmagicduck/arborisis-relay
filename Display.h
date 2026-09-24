@@ -72,6 +72,11 @@
   #define DISP_ADDR 0x3C
   #define SCL_OLED 18
   #define SDA_OLED 17
+#elif BOARD_MODEL == BOARD_WIO_TRACKER_L1
+  // 128x64 SSD1306 on the OLED I2C bus (P0.06 / P0.05), no reset line.
+  #define DISP_RST -1
+  #define DISP_ADDR 0x3C
+  #define DISP_CUSTOM_ADDR true
 #elif BOARD_MODEL == BOARD_RAK4631
   // RAK1921/SSD1306
   #define DISP_RST -1
@@ -434,6 +439,10 @@ bool display_init() {
           disp_mode = DISP_MODE_PORTRAIT;
           display.setRotation(1);
         #elif BOARD_MODEL == BOARD_RAK4631
+          disp_mode = DISP_MODE_LANDSCAPE;
+          display.setRotation(0);
+        #elif BOARD_MODEL == BOARD_WIO_TRACKER_L1
+          // The screen sits wide in the case, the button row under it.
           disp_mode = DISP_MODE_LANDSCAPE;
           display.setRotation(0);
         #elif BOARD_MODEL == BOARD_TDECK
@@ -899,7 +908,7 @@ extern char bt_dh[16];
 #if HAS_WIFI
   extern IPAddress wr_device_ip;
 #endif
-#if defined(FIREWALL_MODE) && defined(ARBORISIS_RELAY)
+#ifdef ARBORISIS_PAGES
 #include "RelayDisplay.h"
 #endif
 void draw_disp_area() {
@@ -921,8 +930,8 @@ void draw_disp_area() {
     if (firmware_update_mode) disp_area.drawBitmap(0, p_by, bm_fw_update, disp_area.width(), 27, SSD1306_WHITE, SSD1306_BLACK);
   } else {
     if (!disp_ext_fb or bt_ssp_pin != 0) {
-#if defined(FIREWALL_MODE) && defined(ARBORISIS_RELAY)
-      // The Arborisis build pages through radio / traffic / node — RelayDisplay.h.
+#ifdef ARBORISIS_PAGES
+      // The Arborisis builds page through radio / traffic / node — RelayDisplay.h.
       relay_draw_disp_area();
 #elif defined(FIREWALL_MODE)
       // ── Firewall Mode display: compact status page ──
