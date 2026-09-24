@@ -33,7 +33,9 @@
 // https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/hathach-memory-map
 // each section follows along from one another, in this order
 // this is always at the start of the memory map
+#ifndef APPLICATION_START
 #define APPLICATION_START 0x26000
+#endif
 
 #define USER_DATA_START 0xED000
 

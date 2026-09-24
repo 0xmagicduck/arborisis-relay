@@ -7,16 +7,28 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-// Arborisis.h — the build profile of an Arborisis relay.
+// Arborisis.h — the build profile of the Arborisis firmware images.
 //
-// Everything that makes an Arborisis relay different from a stock RTNode is a
-// macro in this file, and nothing else in the tree hard-codes a value of the
-// network: the rest of the firmware reads these macros through ARBORISIS_*
-// defaults that fall back to upstream behaviour when ARBORISIS_RELAY is not
-// defined. Two consequences we care about:
+// Two images share it:
 //
-//   1. The upstream environments (rtnode_heltec_v3 / _v4) still build the
-//      unmodified RTNode, so rebasing on jrl290/RTNode-HeltecV4 stays cheap.
+//   ARBORISIS_RELAY   the Heltec WiFi LoRa 32 V3/V4 RTNode: a LoRa <-> TCP
+//                     relay with WiFi, the captive portal, the serial
+//                     configurator (SerialConfig.h) — a rooftop.
+//   ARBORISIS_POCKET  the Seeed Wio Tracker L1 Pro (nRF52840): an RNode for
+//                     Sideband over BLE or USB, on the same channel out of the
+//                     box, and a Reticulum transport node on its own when no
+//                     host is attached — a pocket. No WiFi, so none of the
+//                     relay's gateway settings apply (ArborisisPocket.h).
+//
+// Everything that makes either different from stock is a macro in this file,
+// and nothing else in the tree hard-codes a value of the network: the rest of
+// the firmware reads these macros through ARBORISIS_* defaults that fall back
+// to upstream behaviour when neither profile is defined. Two consequences we
+// care about:
+//
+//   1. The upstream environments (rtnode_heltec_v3 / _v4, wiscore_rak4631,
+//      wio_tracker_l1) still build the unmodified firmware, so rebasing on
+//      jrl290/RTNode-HeltecV4 stays cheap.
 //   2. A change of channel is a change *here*, then a rebuild — not a hunt
 //      through Display.h, FirewallConfig.h and the .ino for a frequency.
 //
@@ -32,12 +44,17 @@
 #ifndef ARBORISIS_H
 #define ARBORISIS_H
 
-#ifdef ARBORISIS_RELAY
+#if defined(ARBORISIS_RELAY) || defined(ARBORISIS_POCKET)
+#define ARBORISIS_PROFILE 1
 
 // Bump on every release published to rns.arborisis.com/relay; the
 // configurator shows it, and manifest.json carries it next to the SHA-256.
-#define ARBORISIS_RELAY_VERSION   "0.2.0"
-#define ARBORISIS_RELAY_NAME      "Arborisis Relay"
+// One version for both images: they are built from one tree, together.
+#define ARBORISIS_RELAY_VERSION   "0.3.0"
+#define ARBORISIS_VERSION         ARBORISIS_RELAY_VERSION
+
+// The OLED title, when the operator gave the node no name.
+#define ARBORISIS_DISPLAY_TITLE   "Arborisis"
 
 // --- The channel ------------------------------------------------------------
 #define ARBORISIS_LORA_FREQ_HZ    869525000UL
@@ -55,6 +72,11 @@
 #define ARBORISIS_LT_AIRTIME_PCT  10.0f
 #define ARBORISIS_AVOID_INTERFERENCE true
 
+#endif // ARBORISIS_RELAY || ARBORISIS_POCKET
+
+#ifdef ARBORISIS_RELAY
+#define ARBORISIS_RELAY_NAME      "Arborisis Relay"
+
 // --- The gateways -----------------------------------------------------------
 // Backbone slots 1 and 2 on a fresh device: the network's two nodes, which
 // live on two machines behind two tunnels and hold a wire to each other. A
@@ -70,12 +92,11 @@
 // --- Names ------------------------------------------------------------------
 // The open access point of the captive portal (the fallback for anyone
 // without a Web Serial browser), the discovery name announced when the
-// operator gave none, the mDNS hostname, and the OLED title.
+// operator gave none, and the mDNS hostname.
 #define ARBORISIS_AP_SSID         "Arborisis-Relay-Setup"
 #define ARBORISIS_NAME_PREFIX     "Arborisis-"
 #define ARBORISIS_MDNS_PREFIX     "arborisis-relay"
 #define ARBORISIS_MDNS_KIND       "arborisis-relay"
-#define ARBORISIS_DISPLAY_TITLE   "Arborisis"
 
 // --- Advertisement ----------------------------------------------------------
 // A relay exists to be found: the point of the network is coverage, and a
@@ -86,6 +107,29 @@
 #define ARBORISIS_JITTER_DEFAULT  true
 
 #endif // ARBORISIS_RELAY
+
+#ifdef ARBORISIS_POCKET
+#define ARBORISIS_POCKET_NAME     "Arborisis Pocket"
+
+// What a fresh device writes into its own ROM at first boot, in place of
+// the `rnodeconf --rom` pass a drag-and-drop UF2 never gets (see
+// ArborisisPocket.h): the board's codes from Boards.h, hardware revision 1,
+// and a manufacture date — this release's, as `rnodeconf -i` prints it.
+#define ARBORISIS_POCKET_HWREV    0x01
+#define ARBORISIS_POCKET_MADE     1790208000UL  // 2026-09-24T00:00:00Z
+
+// The on-device transport keeps a path table; on an nRF52840 the heap
+// behind the SoftDevice is a third of the Heltec's, so the table is sized
+// accordingly (the relay runs 24/12 on the Heltec, upstream's default is
+// 100). A pocket node repeats for the few nodes around it, not the network.
+#define ARBORISIS_POCKET_PATH_TABLE_MAX      16
+#define ARBORISIS_POCKET_PATH_TABLE_PERSIST  8
+#endif // ARBORISIS_POCKET
+
+// The three OLED pages of RelayDisplay.h: the relay's, and the pocket's.
+#if (defined(ARBORISIS_RELAY) && defined(FIREWALL_MODE)) || defined(ARBORISIS_POCKET)
+#define ARBORISIS_PAGES 1
+#endif
 
 // ─── Defaults seen by the rest of the firmware ──────────────────────────────
 // Upstream values when this is not an Arborisis build. Keep every fallback

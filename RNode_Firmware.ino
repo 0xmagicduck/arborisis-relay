@@ -41,6 +41,11 @@
 #include "esp_bt.h"
 #endif
 
+// Arborisis Pocket (nRF52): first-boot provisioning and channel preset.
+#ifdef ARBORISIS_POCKET
+#include "ArborisisPocket.h"
+#endif
+
 // CBA FileSystem
 #if defined(RNS_USE_FS)
 #include "FileSystem.h"
@@ -293,6 +298,13 @@ RTC_NOINIT_ATTR uint32_t boundary_config_request;
 RTC_NOINIT_ATTR uint32_t boundary_skip_config;
 #define BOUNDARY_SKIP_MAGIC 0x5E1FC0F0
 
+// The serial configurator's road into the captive portal (SerialConfig.h):
+// the same flag the long press of the PRG button sets, read at the next boot.
+void boundary_request_config_portal() {
+  boundary_config_request = BOUNDARY_CONFIG_MAGIC;
+  boundary_skip_config = 0;
+}
+
 // Bootloop detection: count rapid reboots in RTC memory.
 // After BOOTLOOP_THRESHOLD consecutive reboots within BOOTLOOP_WINDOW_MS,
 // force entry into the config portal so the user can fix settings.
@@ -399,7 +411,7 @@ static void boundary_capture_reset_report(uint8_t cause, uint8_t heap_stage, uin
   boundary_reset_report.max_alloc_heap = ESP.getMaxAllocHeap();
   boundary_reset_report.wifi_status = wifi_status;
   boundary_reset_report.path_table_maxsize = RNS::Transport::path_table_maxsize();
-  boundary_reset_report.path_table_maxpersist = RNS::Transport::probe_destination_enabled();
+  boundary_reset_report.path_table_maxpersist = RNS::Transport::path_table_maxpersist();
   boundary_reset_report.bridged_lora_to_tcp = firewall_state.packets_bridged_lora_to_tcp;
   boundary_reset_report.bridged_tcp_to_lora = firewall_state.packets_bridged_tcp_to_lora;
 }
@@ -410,7 +422,7 @@ static void boundary_restore_path_caps_if_needed() {
   }
 
   if (RNS::Transport::path_table_maxsize() != boundary_nominal_path_table_maxsize ||
-      RNS::Transport::probe_destination_enabled() != boundary_nominal_path_table_maxpersist) {
+      RNS::Transport::path_table_maxpersist() != boundary_nominal_path_table_maxpersist) {
     RNS::Transport::path_table_maxsize(boundary_nominal_path_table_maxsize);
     RNS::Transport::path_table_maxpersist(boundary_nominal_path_table_maxpersist);
     RNS::Transport::cull_path_table();
@@ -443,7 +455,7 @@ static void boundary_trim_path_caps_for_pressure() {
   }
 
   if (trimmed_maxsize < RNS::Transport::path_table_maxsize() ||
-      trimmed_maxpersist < RNS::Transport::probe_destination_enabled()) {
+      trimmed_maxpersist < RNS::Transport::path_table_maxpersist()) {
     RNS::Transport::path_table_maxsize(trimmed_maxsize);
     RNS::Transport::path_table_maxpersist(trimmed_maxpersist);
     RNS::Transport::cull_path_table();
@@ -532,6 +544,20 @@ void setup() {
     #endif
 
     if (!eeprom_begin()) { Serial.write("EEPROM initialisation failed.\r\n"); }
+
+    #ifdef ARBORISIS_POCKET
+      // A fresh device writes its own ROM and the network's channel now,
+      // before Bluetooth reads its flag and before validate_status() looks
+      // for a provisioned EEPROM (ArborisisPocket.h).
+      pocket_provision_if_needed();
+    #endif
+
+    #if HAS_GNSS
+      // The GNSS receiver has no part in an RNode: hold it in standby from
+      // the first instruction, or it hunts for satellites on the battery.
+      pinMode(pin_gnss_standby, OUTPUT);
+      digitalWrite(pin_gnss_standby, LOW);
+    #endif
   #endif
 
   // Seed the PRNG for CSMA R-value selection
@@ -564,7 +590,7 @@ void setup() {
     boot_seq();
   #endif
 
-  #if BOARD_MODEL != BOARD_RAK4631 && BOARD_MODEL != BOARD_HELTEC_T114 && BOARD_MODEL != BOARD_TECHO && BOARD_MODEL != BOARD_T3S3 && BOARD_MODEL != BOARD_TBEAM_S_V1 && BOARD_MODEL != BOARD_HELTEC32_V4 && BOARD_MODEL != BOARD_HELTEC32_V3
+  #if BOARD_MODEL != BOARD_RAK4631 && BOARD_MODEL != BOARD_HELTEC_T114 && BOARD_MODEL != BOARD_TECHO && BOARD_MODEL != BOARD_T3S3 && BOARD_MODEL != BOARD_TBEAM_S_V1 && BOARD_MODEL != BOARD_HELTEC32_V4 && BOARD_MODEL != BOARD_HELTEC32_V3 && BOARD_MODEL != BOARD_WIO_TRACKER_L1
     // Some boards need to wait until the hardware UART is set up before booting
     // the full firmware. In the case of the RAK4631, Heltec T114, and Heltec V3,
     // the line below will wait until a serial connection is actually established
@@ -1008,7 +1034,7 @@ void setup() {
       RNS::Transport::path_table_maxsize(24);
       RNS::Transport::path_table_maxpersist(12);
       boundary_nominal_path_table_maxsize = RNS::Transport::path_table_maxsize();
-      boundary_nominal_path_table_maxpersist = RNS::Transport::probe_destination_enabled();
+      boundary_nominal_path_table_maxpersist = RNS::Transport::path_table_maxpersist();
       firewall_load_config();
 
       // Bridge probe toggle to Transport (read before Transport::start())
@@ -1120,6 +1146,13 @@ void setup() {
         esp_task_wdt_reset();
       #endif
 
+#ifdef ARBORISIS_POCKET
+      // The pocket's transport keeps a table sized for the nRF52840's heap
+      // behind the SoftDevice (Arborisis.h), not upstream's hundred.
+      RNS::Transport::path_table_maxsize(ARBORISIS_POCKET_PATH_TABLE_MAX);
+      RNS::Transport::path_table_maxpersist(ARBORISIS_POCKET_PATH_TABLE_PERSIST);
+#endif
+
       HEAD("Creating Reticulum instance...", RNS::LOG_TRACE);
       reticulum = RNS::Reticulum();
 #ifdef FIREWALL_MODE
@@ -1192,6 +1225,19 @@ void setup() {
       RNS::Destination destination(identity, RNS::Type::Destination::IN, RNS::Type::Destination::SINGLE, "rnstransport", "local");
 */
       RNS::Destination destination(RNS::Transport::identity(), RNS::Type::Destination::IN, RNS::Type::Destination::SINGLE, "rnstransport", "local");
+
+#ifdef ARBORISIS_POCKET
+      // The transport identity, for the NODE page of the OLED and the log:
+      // what `rnpath -t` shows at the gateway once this node has announced.
+      {
+        std::string h = RNS::Transport::identity().hash().toHex();
+        size_t len = h.length();
+        if (len > 32) len = 32;
+        memcpy(pocket_node_hash_hex, h.c_str(), len);
+        pocket_node_hash_hex[len] = '\0';
+        Serial.printf("[Pocket] Transport identity %s\r\n", pocket_node_hash_hex);
+      }
+#endif
 
 #ifdef FIREWALL_MODE
       // Cache this node's identity and probe destination hashes in RTC memory
@@ -2830,7 +2876,7 @@ void loop() {
       Serial.printf("[WATCHDOG] Heap after trim: %u (path caps %u/%u)\r\n",
                     free_heap,
                     RNS::Transport::path_table_maxsize(),
-                    RNS::Transport::probe_destination_enabled());
+                    RNS::Transport::path_table_maxpersist());
     }
 
     if (free_heap < HEAP_CRITICAL) {
@@ -3121,6 +3167,15 @@ void sleep_now() {
         delay(2000);
         analogWrite(PIN_VEXT_EN, 0);
         delay(100);
+      #elif BOARD_MODEL == BOARD_WIO_TRACKER_L1
+        // An SSD1306 keeps showing its last frame with the MCU off, and the
+        // GNSS keeps hunting for satellites: put both to sleep first.
+        #if HAS_DISPLAY
+          if (disp_ready) display.ssd1306_command(SSD1306_DISPLAYOFF);
+        #endif
+        digitalWrite(pin_gnss_standby, LOW);
+        digitalWrite(pin_led_rx, LOW);
+        digitalWrite(pin_ctrl, LOW);
       #endif
       sd_power_gpregret_set(0, 0x6d);
       nrf_gpio_cfg_sense_input(pin_btn_usr1, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);

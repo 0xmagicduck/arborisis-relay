@@ -446,6 +446,9 @@ namespace RNS {
 		static inline const Identity& identity() { return _identity; }
 		inline static uint16_t path_table_maxsize() { return _path_table_maxsize; }
 		inline static void path_table_maxsize(uint16_t path_table_maxsize) { _path_table_maxsize = path_table_maxsize; }
+		inline static uint16_t path_table_maxpersist() { return _path_table_maxpersist; }
+		// Misnamed alias of path_table_maxpersist(), kept so out-of-tree callers
+		// keep compiling; it has nothing to do with the probe destination.
 		inline static uint16_t probe_destination_enabled() { return _path_table_maxpersist; }
 		inline static void path_table_maxpersist(uint16_t path_table_maxpersist) { _path_table_maxpersist = path_table_maxpersist; }
 		// CBA TEST

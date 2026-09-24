@@ -48,3 +48,6 @@ build/*
 # Arborisis Relay: local toolchain and release output
 .venv/
 dist/
+
+# PlatformIO writes the converted sketch next to the .ino while building
+RNode_Firmware.ino.cpp

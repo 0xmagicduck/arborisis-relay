@@ -1,5 +1,5 @@
 // Copyright (C) 2026, Arborisis
-// Arborisis Relay — the OLED, as a relay operator reads it.
+// Arborisis Relay / Pocket — the OLED, as an operator reads it.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,12 +15,15 @@
 // the gateway link up, what is this node called on the map — and answering
 // them without a laptop is the point of having a screen at all.
 //
-// So the panel cycles through three pages, every RELAY_PAGE_MS or on a short
-// press of the PRG button (which also unblanks the screen, as upstream):
+// So the panel cycles through three pages, every RELAY_PAGE_MS (and, on the
+// relay, on a short press of the PRG button, which also unblanks the screen
+// as upstream; the pocket keeps the RNode's button meanings, where a short
+// press is Bluetooth):
 //
-//   1  RADIO    the channel, TX power, IP — the flash-went-right page
+//   1  RADIO    the channel, TX power, IP (relay) or Bluetooth (pocket)
 //   2  TRAFFIC  LoRa packets in/out, packets bridged each way, last RSSI/SNR
-//   3  NODE     transport identity, uptime, heap, hour airtime, gateway links
+//   3  NODE     transport identity, uptime, heap, hour airtime, gateway
+//               links (relay) or battery (pocket)
 //
 // The left-hand panel (LORA / WIFI / WAN / LAN indicators, battery, signal)
 // is upstream's and unchanged: it is the glanceable half, this is the one
@@ -31,14 +34,23 @@
 // six lines under the title bar. Every string below is written to fit that,
 // and abbreviations were chosen over wrapping — "L>T" for LoRa-to-TCP is
 // terse, but a line that wraps is unreadable.
+//
+// Two builds share the file (Arborisis.h): the relay, where FIREWALL_MODE
+// brings firewall_state and the WiFi, and the pocket, where neither exists
+// and the questions are Bluetooth and the battery instead.
 
 #ifndef RELAY_DISPLAY_H
 #define RELAY_DISPLAY_H
 
-#if defined(FIREWALL_MODE) && defined(ARBORISIS_RELAY)
+#ifdef ARBORISIS_PAGES
 
 #include "Arborisis.h"
+#ifdef FIREWALL_MODE
 #include "FirewallMode.h"
+#endif
+#ifdef HAS_RNS
+#include <Utilities/OS.h>
+#endif
 
 #define RELAY_PAGES   3
 #define RELAY_PAGE_MS 5000
@@ -46,9 +58,14 @@
 static uint8_t  relay_page = 0;
 static uint32_t relay_page_since = 0;
 
+#ifdef FIREWALL_MODE
 extern uint32_t rtc_node_hash_magic;
 extern char     rtc_node_hash_hex[33];
 extern IPAddress wr_device_ip;
+#define RELAY_NODE_HASH_MAGIC 0x504B4841UL
+#else
+extern char pocket_node_hash_hex[33];
+#endif
 
 inline void relay_display_next_page() {
     relay_page = (relay_page + 1) % RELAY_PAGES;
@@ -58,6 +75,27 @@ inline void relay_display_next_page() {
 static void relay_display_tick() {
     if (relay_page_since == 0) relay_page_since = millis();
     if (millis() - relay_page_since >= RELAY_PAGE_MS) relay_display_next_page();
+}
+
+// The transport identity as 32 hex digits, or an empty string until RNS
+// has started on this flash.
+static const char* relay_node_hash() {
+#ifdef FIREWALL_MODE
+    if (rtc_node_hash_magic == RELAY_NODE_HASH_MAGIC) return rtc_node_hash_hex;
+    return "";
+#else
+    return pocket_node_hash_hex;
+#endif
+}
+
+static uint32_t relay_free_heap() {
+#if MCU_VARIANT == MCU_ESP32
+    return ESP.getFreeHeap();
+#elif defined(HAS_RNS)
+    return RNS::Utilities::OS::heap_available();
+#else
+    return 0;
+#endif
 }
 
 // y is the text baseline; the font sits 5 px above it.
@@ -90,8 +128,19 @@ static void relay_format_uptime(char* out, size_t n) {
     else            snprintf(out, n, "Up %lum", (unsigned long)m);
 }
 
+// The hour's airtime against the budget — the number the duty-cycle rule
+// is about, and the one that explains a silent radio (lock).
+static void relay_format_airtime(char* out, size_t n) {
+    if (airtime_lock) snprintf(out, n, "Air LOCK");
+    else snprintf(out, n, "Air %.1f%%", longterm_airtime * 100.0);
+}
+
 static void relay_page_radio() {
+#ifdef FIREWALL_MODE
     relay_title(firewall_state.node_name[0] ? firewall_state.node_name : ARBORISIS_DISPLAY_TITLE);
+#else
+    relay_title(ARBORISIS_DISPLAY_TITLE);
+#endif
     char buf[16];
     if (!radio_online) {
         relay_line(17, "Radio OFF");
@@ -104,6 +153,7 @@ static void relay_page_radio() {
         relay_line(33, buf);
     }
     disp_area.drawLine(0, 38, disp_area.width() - 1, 38, SSD1306_WHITE);
+#ifdef FIREWALL_MODE
     if (firewall_state.wifi_connected) {
         disp_area.setCursor(3, 47);
         disp_area.print(wr_device_ip);
@@ -116,12 +166,23 @@ static void relay_page_radio() {
         snprintf(buf, sizeof(buf), "LAN :%u", firewall_state.ap_tcp_port);
         relay_line(56, buf);
     } else if (radio_online) {
-        // The hour's airtime against the budget — the number the duty-cycle
-        // rule is about, and the one that explains a silent radio (lock).
-        if (airtime_lock) snprintf(buf, sizeof(buf), "Air LOCK");
-        else snprintf(buf, sizeof(buf), "Air %.1f%%", longterm_airtime * 100.0);
+        relay_format_airtime(buf, sizeof(buf));
         relay_line(56, buf);
     }
+#else
+    // The pocket's link to its phone. The RNode's own left-hand panel
+    // shows the Bluetooth icon; this says which of the three states it is.
+    switch (bt_state) {
+        case BT_STATE_CONNECTED: relay_line(47, "BLE linked"); break;
+        case BT_STATE_PAIRING:   relay_line(47, "BLE pair");   break;
+        case BT_STATE_ON:        relay_line(47, "BLE ready");  break;
+        default:                 relay_line(47, "BLE off");    break;
+    }
+    if (radio_online) {
+        relay_format_airtime(buf, sizeof(buf));
+        relay_line(56, buf);
+    }
+#endif
 }
 
 static void relay_page_traffic() {
@@ -129,15 +190,22 @@ static void relay_page_traffic() {
     char buf[16];
     snprintf(buf, sizeof(buf), "RX %lu", (unsigned long)stat_rx);   relay_line(17, buf);
     snprintf(buf, sizeof(buf), "TX %lu", (unsigned long)stat_tx);   relay_line(25, buf);
+#ifdef FIREWALL_MODE
     snprintf(buf, sizeof(buf), "L>T %lu", (unsigned long)firewall_state.packets_bridged_lora_to_tcp); relay_line(33, buf);
     snprintf(buf, sizeof(buf), "T>L %lu", (unsigned long)firewall_state.packets_bridged_tcp_to_lora); relay_line(41, buf);
+#else
+    if (noise_floor > -292) { snprintf(buf, sizeof(buf), "Floor %d", noise_floor); relay_line(33, buf); }
+    relay_format_airtime(buf, sizeof(buf)); relay_line(41, buf);
+#endif
     if (last_rssi > -292) {
         // The SX126x reports SNR in quarter-dB, two's complement.
         snprintf(buf, sizeof(buf), "RSSI %d", last_rssi);           relay_line(49, buf);
         snprintf(buf, sizeof(buf), "SNR %.1f", ((int8_t)last_snr_raw) / 4.0); relay_line(57, buf);
     } else {
         relay_line(49, "No RX yet");
+#ifdef FIREWALL_MODE
         if (noise_floor > -292) { snprintf(buf, sizeof(buf), "Floor %d", noise_floor); relay_line(57, buf); }
+#endif
     }
 }
 
@@ -146,14 +214,16 @@ static void relay_page_node() {
     char buf[16];
     // Sixteen of the thirty-two hex digits, on two lines: enough to find the
     // pin on rmap.world, and what `rnpath -t` shows at the gateway.
-    if (rtc_node_hash_magic == 0x504B4841UL && rtc_node_hash_hex[0] != '\0') {
-        snprintf(buf, sizeof(buf), "ID %.8s", rtc_node_hash_hex);      relay_line(17, buf);
-        snprintf(buf, sizeof(buf), "   %.8s", rtc_node_hash_hex + 8);  relay_line(25, buf);
+    const char* hash = relay_node_hash();
+    if (hash[0] != '\0') {
+        snprintf(buf, sizeof(buf), "ID %.8s", hash);      relay_line(17, buf);
+        snprintf(buf, sizeof(buf), "   %.8s", hash + 8);  relay_line(25, buf);
     } else {
         relay_line(17, "ID pending");
     }
     relay_format_uptime(buf, sizeof(buf));                             relay_line(33, buf);
-    snprintf(buf, sizeof(buf), "Heap %luk", (unsigned long)(ESP.getFreeHeap() / 1024)); relay_line(41, buf);
+    snprintf(buf, sizeof(buf), "Heap %luk", (unsigned long)(relay_free_heap() / 1024)); relay_line(41, buf);
+#ifdef FIREWALL_MODE
     size_t wan_en = firewall_backbone_enabled_count();
     size_t wan_up = firewall_backbone_connected_count();
     if (wan_en == 0) snprintf(buf, sizeof(buf), "GW none");
@@ -161,9 +231,22 @@ static void relay_page_node() {
     relay_line(49, buf);
     if (firewall_state.advert_enabled) relay_line(57, "On the map");
     else                               relay_line(57, "Unlisted");
+#else
+    // The pocket: what the cell holds, and whether this node repeats for
+    // others (TNC mode, the transport on) or only serves its host.
+    if (pmu_ready && battery_installed) {
+        if (external_power) snprintf(buf, sizeof(buf), "Bat %d%% USB", (int)battery_percent);
+        else                snprintf(buf, sizeof(buf), "Bat %d%%", (int)battery_percent);
+        relay_line(49, buf);
+    } else {
+        relay_line(49, "No battery");
+    }
+    relay_line(57, op_mode == MODE_TNC ? "Transport" : "Host mode");
+#endif
 }
 
-// Replaces the FIREWALL_MODE branch of draw_disp_area() for this build.
+// Replaces the FIREWALL_MODE (relay) or stock (pocket) branch of
+// draw_disp_area() for these builds.
 static void relay_draw_disp_area() {
     relay_display_tick();
     disp_area.fillRect(0, 0, disp_area.width(), disp_area.height(), SSD1306_BLACK);
@@ -171,6 +254,24 @@ static void relay_draw_disp_area() {
     disp_area.setTextWrap(false);
     disp_area.setTextSize(1);
     disp_area.setTextColor(SSD1306_WHITE);
+#if !defined(FIREWALL_MODE) && (HAS_BLUETOOTH || HAS_BLE)
+    // A Bluetooth pairing in progress shows its PIN, as the stock panel
+    // does: the phone asks for the six digits, and this is where they are.
+    if (bt_state == BT_STATE_PAIRING && bt_ssp_pin != 0) {
+        char pin_str[DISP_PIN_SIZE + 1];
+        snprintf(pin_str, sizeof(pin_str), "%06lu", (unsigned long)bt_ssp_pin);
+        disp_area.drawBitmap(0, 37, bm_pairing, disp_area.width(), 27, SSD1306_WHITE, SSD1306_BLACK);
+        for (int i = 0; i < DISP_PIN_SIZE; i++) {
+            uint8_t numeric = pin_str[i] - '0';
+            uint8_t offset = numeric * 5;
+            disp_area.drawBitmap(7 + 9 * i, 37 + 16, bm_n_uh + offset, 8, 5, SSD1306_WHITE, SSD1306_BLACK);
+        }
+        relay_title("PAIRING");
+        relay_line(20, "Enter PIN");
+        relay_line(28, "on phone");
+        return;
+    }
+#endif
     switch (relay_page) {
         case 1:  relay_page_traffic(); break;
         case 2:  relay_page_node();    break;
@@ -180,5 +281,5 @@ static void relay_draw_disp_area() {
     disp_area.drawLine(0, 63, disp_area.width() - 1, 63, SSD1306_WHITE);
 }
 
-#endif // FIREWALL_MODE && ARBORISIS_RELAY
+#endif // ARBORISIS_PAGES
 #endif // RELAY_DISPLAY_H
