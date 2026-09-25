@@ -318,6 +318,50 @@
   "ram_used": 94500,
   "seconds": 160
  },
+ "arb_heltec_wsl3": {
+  "error": "",
+  "flash_pct": 58.6,
+  "flash_total": 3342336,
+  "flash_used": 1959825,
+  "ok": true,
+  "ram_pct": 29.2,
+  "ram_total": 327680,
+  "ram_used": 95820,
+  "seconds": 165
+ },
+ "arb_ikoka_handheld_nrf_e22_30dbm": {
+  "error": "",
+  "flash_pct": 85.9,
+  "flash_total": 811008,
+  "flash_used": 696452,
+  "ok": true,
+  "ram_pct": 19.4,
+  "ram_total": 235520,
+  "ram_used": 45628,
+  "seconds": 93
+ },
+ "arb_keepteenlt1": {
+  "error": "",
+  "flash_pct": 88.6,
+  "flash_total": 815104,
+  "flash_used": 722320,
+  "ok": true,
+  "ram_pct": 19.6,
+  "ram_total": 235520,
+  "ram_used": 46172,
+  "seconds": 95
+ },
+ "arb_lilygo_t3s3_sx1262": {
+  "error": "",
+  "flash_pct": 60.7,
+  "flash_total": 3145728,
+  "flash_used": 1908657,
+  "ok": true,
+  "ram_pct": 28.7,
+  "ram_total": 327680,
+  "ram_used": 93944,
+  "seconds": 175
+ },
  "arb_rak_4631": {
   "error": "",
   "flash_pct": 97.7,

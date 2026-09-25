@@ -54,6 +54,17 @@ PLATFORM_BOARD_FLASH_MB = {
     "ttgo-lora32-v1": 4,
     "ttgo-t-beam": 4,
 }
+# The partition table those same boards name (build.arduino.partitions),
+# for the ones with more than 4 MB of flash; the others get huge_app.csv.
+PLATFORM_BOARD_PARTITIONS = {
+    "esp32-s3-devkitc-1": "default_8MB.csv",
+    "esp32s3box": "default_16MB.csv",
+    "heltec_wifi_lora_32_V2": "default_8MB.csv",
+    "seeed_xiao_esp32s3": "default_8MB.csv",
+}
+# Tables whose application slot (1.25 / 1.9 MB) cannot hold MeshCore and
+# Reticulum together (about 2 MB on an ESP32-S3).
+SMALL_PARTITION_TABLES = ("default.csv", "min_spiffs.csv")
 REPEATER_RE = re.compile(r"_?[Rr]epeater_?$")
 
 
@@ -135,6 +146,17 @@ def main():
         m = re.match(r"(\d+)\s*MB", v or "")
         return int(m.group(1)) if m else None
 
+    def partition_table(name):
+        """The partition table the env builds with: its own, its board's, or the core's default."""
+        own = option(name, "board_build.partitions")
+        if own:
+            return own
+        board = option(name, "board")
+        f = ROOT / "boards" / f"{board}.json"
+        if f.exists():
+            return json.loads(f.read_text()).get("build", {}).get("arduino", {}).get("partitions") or "default.csv"
+        return PLATFORM_BOARD_PARTITIONS.get(board, "default.csv")
+
     def define(flagstr, key):
         m = re.search(r"-D\s*" + key + r"=([^\s]+)", flagstr)
         return m.group(1).strip("'\"") if m else None
@@ -168,10 +190,24 @@ def main():
             # ESP32 boards with 4 MB of flash: MeshCore's two OTA slots leave
             # 1.25 MB (1.9 MB with min_spiffs) for the application, less than
             # MeshCore and Reticulum together. One 3 MB slot instead (no OTA
-            # over WiFi; these boards are flashed over USB anyway).
+            # over WiFi; these boards are flashed over USB anyway). A larger
+            # flash left on one of those tables gets the core's table for its
+            # size, two OTA slots of 3.25 or 6.25 MB.
             partitions = None
-            if fam in ("esp32", "esp32c6") and board_flash_mb(src) == 4:
-                partitions = "huge_app.csv"
+            if fam in ("esp32", "esp32c6"):
+                mb = board_flash_mb(src)
+                if mb == 4:
+                    partitions = "huge_app.csv"
+                elif partition_table(src) in SMALL_PARTITION_TABLES:
+                    partitions = f"default_{mb}MB.csv" if mb in (8, 16) else "huge_app.csv"
+            # nRF52 layouts that give the application's flash to a second
+            # file system (…_extrafs.ld, for the companion's contacts) go back
+            # to the standard one: the repeater never uses that file system,
+            # and MeshCore with Reticulum needs the room.
+            ldscript = None
+            ld = option(src, "board_build.ldscript") or ""
+            if fam == "nrf52" and ld.endswith("_extrafs.ld") and (ROOT / ld.replace("_extrafs.ld", ".ld")).exists():
+                ldscript = ld.replace("_extrafs.ld", ".ld")
             envs.append({
                 "env": slug(src[4:] if src.startswith("env:") else src),
                 "extends": src,
@@ -181,6 +217,7 @@ def main():
                 "display": define(f, "DISPLAY_CLASS"),
                 "headless": headless,
                 "partitions": partitions,
+                "ldscript": ldscript,
             })
 
     seen = {}
@@ -206,6 +243,7 @@ def main():
             f"custom_arb_family = {e['family']}",
             f"custom_arb_variant = {e['variant']}",
             *([f"board_build.partitions = {e['partitions']}"] if e.get("partitions") else []),
+            *([f"board_build.ldscript = {e['ldscript']}"] if e.get("ldscript") else []),
             "build_flags =",
             f"  ${{{ref}.build_flags}}",
             "  ${arborisis.build_flags}",
@@ -220,6 +258,10 @@ def main():
             f"  ${{{ref}.lib_deps}}",
             "  ${arborisis.lib_deps}",
             f"  ${{{fam}.lib_deps}}",
+            # arduino-pico's BLE library, which the LDF finds through app/BleLink.cpp's
+            # ESP32 includes and cannot build without Bluetooth (MeshCore's own
+            # RP2040 environments ignore it the same way).
+            *([f"lib_ignore = ${{{fam}.lib_ignore}}"] if e["family"] == "rp2040" else []),
             "",
         ]
     (ROOT / "arborisis_envs.ini").write_text("\n".join(out))

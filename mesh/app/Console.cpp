@@ -30,10 +30,10 @@ void Console::loop() {
     _last_rx = now;
     uint8_t t;
     switch (_kiss.feed(b, t)) {
-      case kiss::Decoder<600>::FRAME:
+      case kiss::Decoder<600>::KISS_FRAME:
         rnode_host.onFrame(_kiss.command(), _kiss.payload(), _kiss.payloadLen());
         break;
-      case kiss::Decoder<600>::TEXT:
+      case kiss::Decoder<600>::KISS_TEXT:
         textByte(t);
         break;
       default:

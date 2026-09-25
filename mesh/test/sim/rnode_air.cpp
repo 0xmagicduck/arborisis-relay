@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
       ssize_t n = read(s.sink.fd, buf, sizeof(buf));
       for (ssize_t k = 0; k < n; k++) {
         uint8_t t;
-        if (s.dec.feed(buf[k], t) == kiss::Decoder<600>::FRAME)
+        if (s.dec.feed(buf[k], t) == kiss::Decoder<600>::KISS_FRAME)
           s.host->onFrame(s.dec.command(), s.dec.payload(), s.dec.payloadLen());
       }
       s.host->tick(now_ms());

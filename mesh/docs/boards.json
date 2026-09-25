@@ -7,7 +7,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_gat562_30s_mesh_kit",
@@ -17,7 +18,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_gat562_mesh_evb_pro",
@@ -27,7 +29,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_gat562_mesh_tracker_pro",
@@ -37,7 +40,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_gat562_mesh_watch13",
@@ -47,7 +51,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": true,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_generic_e22_sx1262",
@@ -57,7 +62,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_generic_e22_sx1268",
@@ -67,7 +73,8 @@
   "radio": "CustomSX1268",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_heltec_ct62",
@@ -77,7 +84,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_heltec_e213",
@@ -87,7 +95,8 @@
   "radio": "CustomSX1262",
   "display": "E213Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_e290",
@@ -97,7 +106,8 @@
   "radio": "CustomSX1262",
   "display": "E290Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_mesh_solar",
@@ -107,7 +117,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_rc32",
@@ -117,7 +128,8 @@
   "radio": "CustomSX1262",
   "display": "NV3001BDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_rc32_without_display",
@@ -127,7 +139,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_t096",
@@ -137,7 +150,8 @@
   "radio": "CustomSX1262",
   "display": "ST7735Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_t1",
@@ -147,7 +161,8 @@
   "radio": "CustomSX1262",
   "display": "ST7735Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_t114",
@@ -157,7 +172,8 @@
   "radio": "CustomSX1262",
   "display": "ST7789Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_t114_without_display",
@@ -167,7 +183,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_t190",
@@ -177,7 +194,8 @@
   "radio": "CustomSX1262",
   "display": "ST7789Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_tower_v2",
@@ -187,7 +205,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_tracker_v2",
@@ -197,7 +216,8 @@
   "radio": "CustomSX1262",
   "display": "ST7735Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v2",
@@ -207,7 +227,8 @@
   "radio": "CustomSX1276",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v3",
@@ -217,7 +238,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v4",
@@ -227,7 +249,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v4_expansionkit",
@@ -237,7 +260,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v4_r8",
@@ -247,7 +271,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v4_r8_tft",
@@ -257,7 +282,8 @@
   "radio": "CustomSX1262",
   "display": "ST7789LCDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_v4_tft",
@@ -267,7 +293,8 @@
   "radio": "CustomSX1262",
   "display": "ST7789LCDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_wireless_paper",
@@ -277,7 +304,8 @@
   "radio": "CustomSX1262",
   "display": "E213Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_wireless_tracker",
@@ -287,7 +315,8 @@
   "radio": "CustomSX1262",
   "display": "ST7735Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_heltec_wsl3",
@@ -297,7 +326,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_ikoka_handheld_nrf_e22_30dbm",
@@ -307,7 +337,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_keepteenlt1",
@@ -317,7 +348,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t3s3_sx1262",
@@ -327,7 +359,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t3s3_sx1276",
@@ -337,7 +370,8 @@
   "radio": "CustomSX1276",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t_echo",
@@ -347,7 +381,8 @@
   "radio": "CustomSX1262",
   "display": "GxEPDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t_echo_card",
@@ -357,7 +392,8 @@
   "radio": "CustomSX1262",
   "display": "U8g2Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t_echo_lite",
@@ -367,7 +403,8 @@
   "radio": "CustomSX1262",
   "display": "GxEPDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_t_impulse_plus",
@@ -377,7 +414,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": "boards/nrf52840_s140_v6.ld"
  },
  {
   "env": "arb_lilygo_tbeam_1w",
@@ -387,7 +425,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": "default_16MB.csv",
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_tdeck",
@@ -397,7 +436,8 @@
   "radio": "CustomSX1262",
   "display": "ST7789LCDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_teth_elite_sx1262",
@@ -407,7 +447,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_tlora_c6",
@@ -417,7 +458,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_lilygo_tlora_v2_1_1_6",
@@ -427,7 +469,8 @@
   "radio": "CustomSX1276",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_m5stack_unit_c6l",
@@ -437,7 +480,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_mesh_pocket",
@@ -447,7 +491,8 @@
   "radio": "CustomSX1262",
   "display": "GxEPDDisplay",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_meshadventurer_sx1262",
@@ -457,7 +502,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_meshadventurer_sx1268",
@@ -467,7 +513,8 @@
   "radio": "CustomSX1268",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_meshimi",
@@ -477,7 +524,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_meshnology_w12",
@@ -487,7 +535,8 @@
   "radio": "CustomLR2021",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_meshtiny",
@@ -497,7 +546,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": true,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_meshtracker_x1",
@@ -507,7 +557,8 @@
   "radio": "CustomLR2021",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_minewsemi_me25ls01",
@@ -517,7 +568,8 @@
   "radio": "CustomLR1110",
   "display": "NullDisplayDriver",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_nano_g2_ultra",
@@ -527,7 +579,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_nibble_screen_connect",
@@ -537,7 +590,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_nibble_zero_connect",
@@ -547,7 +601,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_picow",
@@ -557,7 +612,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_promicro",
@@ -567,7 +623,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_r1neo",
@@ -577,7 +634,8 @@
   "radio": "CustomSX1262",
   "display": "NullDisplayDriver",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_11310",
@@ -587,7 +645,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_3112",
@@ -597,7 +656,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_3401",
@@ -607,7 +667,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_3x72",
@@ -617,7 +678,8 @@
   "radio": "CustomSTM32WLx",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_4631",
@@ -627,7 +689,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_rak_wismesh_tag",
@@ -637,7 +700,8 @@
   "radio": "CustomSX1262",
   "display": "NullDisplayDriver",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_sensecap_solar",
@@ -647,7 +711,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_station_g2",
@@ -657,7 +722,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": "default_16MB.csv",
+  "ldscript": null
  },
  {
   "env": "arb_station_g3_esp32",
@@ -667,7 +733,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": "default_16MB.csv",
+  "ldscript": null
  },
  {
   "env": "arb_t1000e",
@@ -677,7 +744,8 @@
   "radio": "CustomLR1110",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_t_beam_s3_supreme_sx1262",
@@ -687,7 +755,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_tbeam_sx1262",
@@ -697,7 +766,8 @@
   "radio": "CustomSX1262",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_tbeam_sx1276",
@@ -707,7 +777,8 @@
   "radio": "CustomSX1276",
   "display": "SSD1306Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_tenstar_c3_sx1262",
@@ -717,7 +788,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_tenstar_c3_sx1268",
@@ -727,7 +799,8 @@
   "radio": "CustomSX1268",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m1",
@@ -737,7 +810,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m2",
@@ -747,7 +821,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m3",
@@ -757,7 +832,8 @@
   "radio": "CustomLR1110",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m5",
@@ -767,7 +843,8 @@
   "radio": "CustomSX1262",
   "display": "GxEPDDisplay",
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m6",
@@ -777,7 +854,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m7",
@@ -787,7 +865,8 @@
   "radio": "CustomLR1110",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_thinknode_m9",
@@ -797,7 +876,8 @@
   "radio": "CustomLR1110",
   "display": "ST7789Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_tiny_relay",
@@ -807,7 +887,8 @@
   "radio": "CustomSTM32WLx",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_waveshare_rp2040_lora",
@@ -817,7 +898,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_why2025_badge",
@@ -827,7 +909,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_wio_e5",
@@ -837,7 +920,8 @@
   "radio": "CustomSTM32WLx",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_wio_e5_mini",
@@ -847,7 +931,8 @@
   "radio": "CustomSTM32WLx",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_wio_wm1110",
@@ -857,7 +942,8 @@
   "radio": "CustomLR1110",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_wiotrackerl1",
@@ -867,7 +953,8 @@
   "radio": "CustomSX1262",
   "display": "SH1106Display",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_wiotrackerl1eink",
@@ -877,7 +964,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": true,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_xiao_c3",
@@ -887,7 +975,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_xiao_c6",
@@ -897,7 +986,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": "huge_app.csv"
+  "partitions": "huge_app.csv",
+  "ldscript": null
  },
  {
   "env": "arb_xiao_nrf52",
@@ -907,7 +997,8 @@
   "radio": "CustomSX1262",
   "display": "NullDisplayDriver",
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_xiao_rp2040",
@@ -917,7 +1008,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_xiao_s3",
@@ -927,7 +1019,8 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  },
  {
   "env": "arb_xiao_s3_wio",
@@ -937,6 +1030,7 @@
   "radio": "CustomSX1262",
   "display": null,
   "headless": false,
-  "partitions": null
+  "partitions": null,
+  "ldscript": null
  }
 ]

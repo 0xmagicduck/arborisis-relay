@@ -188,7 +188,7 @@ TEST(Kiss, EscapesBothWays) {
   uint8_t t;
   int frames = 0;
   for (uint8_t b : s.v) {
-    if (d.feed(b, t) == kiss::Decoder<64>::FRAME) {
+    if (d.feed(b, t) == kiss::Decoder<64>::KISS_FRAME) {
       frames++;
       EXPECT_EQ(d.command(), 0x00);
       ASSERT_EQ(d.payloadLen(), sizeof(payload));
@@ -204,7 +204,7 @@ TEST(Kiss, RnsDetectBurstSharesDelimiters) {
   kiss::Decoder<64> d;
   std::vector<uint8_t> cmds;
   uint8_t t;
-  for (uint8_t b : burst) if (d.feed(b, t) == kiss::Decoder<64>::FRAME) cmds.push_back(d.command());
+  for (uint8_t b : burst) if (d.feed(b, t) == kiss::Decoder<64>::KISS_FRAME) cmds.push_back(d.command());
   EXPECT_EQ(cmds, (std::vector<uint8_t>{ 0x08, 0x50, 0x48, 0x49 }));
 }
 
@@ -212,14 +212,14 @@ TEST(Kiss, TextOutsideFramesAndAfterAbandon) {
   kiss::Decoder<64> d;
   uint8_t t;
   std::string text;
-  for (char c : std::string("ver\r")) if (d.feed((uint8_t)c, t) == kiss::Decoder<64>::TEXT) text += (char)t;
+  for (char c : std::string("ver\r")) if (d.feed((uint8_t)c, t) == kiss::Decoder<64>::KISS_TEXT) text += (char)t;
   EXPECT_EQ(text, "ver\r");
   uint8_t frame[] = { 0xC0, 0x0A, 0xFF, 0xC0 };
   for (uint8_t b : frame) d.feed(b, t);
   EXPECT_TRUE(d.openAndEmpty());
   d.abandonFrame();
   text.clear();
-  for (char c : std::string("arb")) if (d.feed((uint8_t)c, t) == kiss::Decoder<64>::TEXT) text += (char)t;
+  for (char c : std::string("arb")) if (d.feed((uint8_t)c, t) == kiss::Decoder<64>::KISS_TEXT) text += (char)t;
   EXPECT_EQ(text, "arb");
 }
 
@@ -250,7 +250,7 @@ static std::vector<Frame> parse(const std::vector<uint8_t>& bytes) {
   kiss::Decoder<600> d;
   uint8_t t;
   for (uint8_t b : bytes) {
-    if (d.feed(b, t) == kiss::Decoder<600>::FRAME)
+    if (d.feed(b, t) == kiss::Decoder<600>::KISS_FRAME)
       out.push_back({ d.command(), std::vector<uint8_t>(d.payload(), d.payload() + d.payloadLen()) });
   }
   return out;

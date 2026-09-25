@@ -40,11 +40,14 @@ inline void writeFrame(Sink& s, uint8_t cmd, const uint8_t* payload, size_t len)
 
 // Streaming decoder. Bytes outside a frame are reported as text (the serial
 // line is shared with a line-based console), bytes inside are unescaped
-// into the frame buffer; feed() returns FRAME when one is complete.
+// into the frame buffer; feed() returns KISS_FRAME when one is complete.
 template <size_t CAP>
 class Decoder {
 public:
-  enum Result { NONE, FRAME, TEXT };
+  // Prefixed: board libraries define plain words as macros (meshsolar's
+  // logger.h, for the Heltec MeshSolar, has `#define NONE 1`), and a macro
+  // does not care about scopes.
+  enum Result { KISS_NONE, KISS_FRAME, KISS_TEXT };
 
   Decoder() { reset(); }
 
@@ -52,7 +55,7 @@ public:
 
   bool inFrame() const { return _in_frame; }
 
-  // For TEXT, the byte is in `text_byte`. For FRAME, the frame is
+  // For KISS_TEXT, the byte is in `text_byte`. For KISS_FRAME, the frame is
   // command() / payload() / payloadLen().
   Result feed(uint8_t b, uint8_t& text_byte) {
     if (b == FEND) {
@@ -61,21 +64,21 @@ public:
         // frames share their delimiter, as RNS writes them).
         _done_len = _len;
         _in_frame = true; _escape = false; _len = 0; _overflow = false;
-        return FRAME;
+        return KISS_FRAME;
       }
       _in_frame = true; _escape = false; _len = 0; _overflow = false;
-      return NONE;
+      return KISS_NONE;
     }
-    if (!_in_frame) { text_byte = b; return TEXT; }
+    if (!_in_frame) { text_byte = b; return KISS_TEXT; }
 
-    if (b == FESC) { _escape = true; return NONE; }
+    if (b == FESC) { _escape = true; return KISS_NONE; }
     if (_escape) {
       if (b == TFEND) b = FEND;
       else if (b == TFESC) b = FESC;
       _escape = false;
     }
     if (_len < CAP) _buf[_len++] = b; else _overflow = true;
-    return NONE;
+    return KISS_NONE;
   }
 
   // A closing FEND leaves the decoder inside the next frame, empty — RNS

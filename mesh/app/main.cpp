@@ -99,7 +99,7 @@ static void bleLoop(uint32_t now) {
   int budget = 512;
   while (budget-- > 0 && ble.available() > 0) {
     uint8_t t;
-    if (ble_kiss.feed((uint8_t)ble.read(), t) == kiss::Decoder<600>::FRAME)
+    if (ble_kiss.feed((uint8_t)ble.read(), t) == kiss::Decoder<600>::KISS_FRAME)
       ble_host.onFrame(ble_kiss.command(), ble_kiss.payload(), ble_kiss.payloadLen());
   }
   ble_host.tick(now);

@@ -207,6 +207,19 @@ Sur ESP32, le système de fichiers passe de SPIFFS (MeshCore) à LittleFS
 (répertoires nécessaires à Reticulum) : une carte qui portait un firmware
 MeshCore recrée son identité MeshCore au premier démarrage.
 
+Place en flash, réglée par `tools/gen_envs.py` carte par carte :
+
+- ESP32 : MeshCore et Reticulum pèsent environ 2 Mo ensemble, plus que
+  l'emplacement applicatif des tables `default.csv` (1,25 Mo) et
+  `min_spiffs.csv` (1,9 Mo). Une carte de 4 Mo prend `huge_app.csv` (3 Mo,
+  sans OTA) ; une carte de 8 ou 16 Mo restée sur l'une de ces tables prend
+  `default_8MB.csv` ou `default_16MB.csv`.
+- nRF52840 : une variante liée avec `…_extrafs.ld` (la zone applicative
+  cédée à un second système de fichiers, pour les contacts du compagnon)
+  revient à la disposition standard : le répéteur ne s'en sert pas.
+- RP2040 : la bibliothèque `BLE` d'arduino-pico est ignorée, comme dans
+  les environnements RP2040 de MeshCore.
+
 ## 8. Ce qui est vérifié, ce qui ne l'est pas
 
 Vérifié dans ce dépôt :
