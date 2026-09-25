@@ -140,7 +140,10 @@ void setup() {
   app.board_name = board.getManufacturerName();
 
 #ifdef DISPLAY_CLASS
-  if (display.begin()) ui.splash("starting...");
+  const bool has_display = display.begin();   // NullDisplayDriver: false
+  if (has_display) ui.splash("starting...");
+#else
+  const bool has_display = false;
 #endif
 
   if (!radio_init()) {
@@ -206,7 +209,7 @@ void setup() {
   console.begin();
   rnode_host.announceReset();
   startBle();
-  ui.begin();
+  ui.begin(has_display);
 
 #if ENABLE_ADVERT_ON_BOOT == 1
   if (app.mc_running) the_mesh.sendSelfAdvertisement(16000, false);

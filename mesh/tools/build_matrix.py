@@ -5,7 +5,7 @@
     python3 tools/build_matrix.py                 # every arb_* environment
     python3 tools/build_matrix.py arb_heltec_v3 arb_rak_4631
     python3 tools/build_matrix.py --failed        # only those that failed last time
-    python3 tools/build_matrix.py --clean         # remove each build dir afterwards (disk)
+    python3 tools/build_matrix.py --clean         # remove each build and libdeps dir afterwards (disk)
     python3 tools/build_matrix.py --reclassify    # re-read the logs of the failures, build nothing
 
 Builds run strictly in sequence: PlatformIO cleans every build directory
@@ -98,8 +98,9 @@ def main(argv):
               + (f"  RAM {results[env]['ram_pct']}%  flash {results[env]['flash_pct']}%" if rc == 0 else f"  {err}"),
               flush=True)
         RESULTS.write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
-        if clean:
+        if clean:   # ~150 MB of libraries per board: 94 boards do not fit on a small disk
             shutil.rmtree(ROOT / ".pio" / "build" / env, ignore_errors=True)
+            shutil.rmtree(ROOT / ".pio" / "libdeps" / env, ignore_errors=True)
 
     subprocess.call([sys.executable, str(ROOT / "tools" / "matrix.py")], cwd=ROOT)
     return 0

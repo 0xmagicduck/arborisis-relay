@@ -72,7 +72,7 @@ def main():
             fl = f"{r['flash_pct']} %" if r.get("flash_pct") is not None else ""
         else:
             status, ram, fl = "❌ " + (r.get("error") or "").replace("|", "/")[:80], "", ""
-        disp = b.get("display") or ""
+        disp = "" if b.get("display") in (None, "NullDisplayDriver") else b["display"]
         out.append(f"| `{b['env']}` | {b['variant']} | {FAMILY.get(b['family'], b['family'])} | "
                    f"{RADIO.get(b['radio'], b['radio'])} | {disp} | {status} | {ram} | {fl} |")
     out.append("")

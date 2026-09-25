@@ -10,8 +10,11 @@
 // long press on the current mode, or 15 s without a press, closes the menu).
 //
 // Without a display, on the boards whose button polarity the MeshCore board
-// file states (USER_BTN_PRESSED: T1000-E, MeshTracker X1, R1 Neo…), a triple
-// press switches to the next mode and restarts; the console says which.
+// file states (USER_BTN_PRESSED: T1000-E, MeshTracker X1…), a triple press
+// switches to the next mode and restarts; the console says which. A board
+// whose display class answers begin() with false (NullDisplayDriver: XIAO
+// nRF52840, R1 Neo, WisMesh Tag…, or a screen that is not plugged in) gets
+// the same triple press instead of a menu nobody can see.
 
 #pragma once
 
@@ -21,7 +24,7 @@ namespace arb {
 
 class ArbUI {
 public:
-  void begin();
+  void begin(bool display_present = true);
   void loop();
   void splash(const char* line);
 
@@ -37,6 +40,7 @@ private:
   uint32_t _next_refresh = 0;
   uint32_t _off_at = 0;
   bool _on = false;
+  bool _display = false;   // begin() of the display class said a screen is there
 };
 
 extern ArbUI ui;

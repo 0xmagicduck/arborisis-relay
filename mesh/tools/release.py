@@ -146,7 +146,8 @@ def build_one(env, info, version):
         "board": board_name(info["variant"], env),
         "meshcore_variant": info["variant"],
         "radio": RADIO.get(info["radio"], info["radio"]),
-        "display": bool(info.get("display")),
+        # NullDisplayDriver: the variant's display class for "no screen".
+        "display": info.get("display") not in (None, "", "NullDisplayDriver"),
         "reticulum": "ARB_WITH_RNS=1" in flags,
         "ble": "ARB_WITH_BLE=1" in flags,
     }

@@ -51,10 +51,12 @@ void ArbUI::applyMode(uint8_t mode) {
 
 static const uint8_t PAGES = 4;
 
-void ArbUI::begin() {
+void ArbUI::begin(bool display_present) {
 #if defined(PIN_USER_BTN)
   user_btn.begin();
 #endif
+  _display = display_present;
+  if (!_display) return;
   display.turnOn();
   _on = true;
   _off_at = millis() + (app.cfg.display_timeout ? app.cfg.display_timeout * 1000UL : 0);
@@ -71,6 +73,10 @@ void ArbUI::splash(const char* line) {
 }
 
 void ArbUI::button(int ev, uint32_t now) {
+  if (!_display) {                 // nothing to show a menu on: the headless gesture
+    if (ev == BUTTON_EVENT_TRIPLE_CLICK) applyMode(nextMode(app.cfg.mode));
+    return;
+  }
   if (ev != BUTTON_EVENT_CLICK && ev != BUTTON_EVENT_LONG_PRESS) return;
   _off_at = now + (app.cfg.display_timeout ? app.cfg.display_timeout * 1000UL : 0);
   _next_refresh = now;
@@ -225,7 +231,7 @@ void ArbUI::render() {
 static MomentaryButton headless_btn(PIN_USER_BTN, 1000, USER_BTN_PRESSED == LOW);
 #endif
 
-void ArbUI::begin() {
+void ArbUI::begin(bool) {
 #if defined(PIN_USER_BTN) && defined(USER_BTN_PRESSED)
   headless_btn.begin();
 #endif
