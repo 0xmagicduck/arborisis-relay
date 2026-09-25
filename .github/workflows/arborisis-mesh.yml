@@ -8,15 +8,20 @@ on:
     branches: [main]
     paths:
       - "mesh/**"
+      - "!mesh/**/*.md"
+      - "!mesh/docs/**"
       - "lib/microReticulum/**"
       - ".github/workflows/arborisis-mesh.yml"
   pull_request:
     paths:
       - "mesh/**"
+      - "!mesh/**/*.md"
+      - "!mesh/docs/**"
       - "lib/microReticulum/**"
       - ".github/workflows/arborisis-mesh.yml"
   workflow_dispatch:
 
+# Documentation and build reports (*.md, mesh/docs/) do not rebuild 94 boards.
 # A branch's pull request builds once per push, and a newer push cancels the
 # builds of the one before: 94 boards per run.
 concurrency:

@@ -134,7 +134,7 @@ répéteur MeshCore.
 
 ### Changer de mode avec le bouton
 
-Sur les cartes avec écran et bouton (52 environnements) :
+Sur les cartes avec écran et bouton :
 
 - **appui court** : page suivante (vue d'ensemble, MeshCore, Reticulum, radio) ;
 - **appui long** : ouvre le menu **Mode** — `MC + Reticulum`, `MeshCore`,
@@ -143,8 +143,11 @@ Sur les cartes avec écran et bouton (52 environnements) :
   long sur le mode actuel, ou 15 s sans appui, referme le menu).
 
 Sur les cartes sans écran dont le fichier de carte MeshCore indique le
-sens du bouton (`USER_BTN_PRESSED` : T1000-E, MeshTracker X1, R1 Neo…), un
+sens du bouton (`USER_BTN_PRESSED` : T1000-E, MeshTracker X1…), un
 **triple appui** passe au mode suivant et redémarre ; la console l'annonce.
+C'est aussi le geste des cartes dont la variante MeshCore déclare un écran
+vide (`NullDisplayDriver` : XIAO nRF52840, R1 Neo, WisMesh Tag…) ou dont
+l'écran ne répond pas au démarrage.
 Partout, `arb mode …` fait la même chose depuis la console.
 
 ## Ajouter une carte, suivre MeshCore
