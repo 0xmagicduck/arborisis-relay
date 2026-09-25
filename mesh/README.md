@@ -44,6 +44,7 @@ cd mesh
 ../.venv/bin/pio run -e arb_heltec_v3        # une carte
 ../.venv/bin/pio run                          # toutes les cartes (long)
 ../.venv/bin/pio test -e arb_native           # tests hôtes
+python3 test/sim/e2e_rns.py                   # vraie pile Reticulum contre le protocole RNode (pip install rns)
 python3 tools/release.py arb_heltec_v3 arb_rak_4631   # images + manifest dans dist/
 ```
 
@@ -85,6 +86,11 @@ Pendant que l'hôte est branché, **son** canal devient le canal Reticulum de
 la carte (le répéteur MeshCore continue sur le sien) ; quand il part, le
 canal configuré revient.
 
+En Bluetooth LE (cartes ESP32 et nRF52), la carte s'annonce
+**« RNode XXXX »** : appairez-la dans les réglages Bluetooth du téléphone avec
+le code à six chiffres affiché à l'écran (ou donné par `arb ble` sur la
+console), puis choisissez-la comme RNode dans Sideband.
+
 ### Avec l'application MeshCore
 
 Le répéteur apparaît comme n'importe quel répéteur MeshCore : connexion
@@ -106,6 +112,7 @@ répéteur MeshCore.
 | `arb rns freq\|bw\|sf\|cr\|txp <v>` | un paramètre du canal Reticulum |
 | `arb rns transport on\|off` | relayer pour les autres (redémarre) |
 | `arb rns paths <n>` | taille de la table de chemins, 0 = défaut (redémarre) |
+| `arb ble` / `arb ble on\|off` / `arb ble pin <6 chiffres>` | RNode en Bluetooth LE : état, activation, code d'appairage (redémarre) |
 | `arb duty <%>` | budget d'émission de l'appareil, 0 = sans limite |
 | `arb name <texte>` | nom affiché |
 | `arb display <s>` | extinction de l'écran, 0 = toujours allumé |
@@ -113,8 +120,20 @@ répéteur MeshCore.
 | `arb reboot` / `arb reset` | redémarrer / réglages Arborisis par défaut |
 | `ver`, `set radio …`, `neighbors`, `advert`, `password …` | CLI MeshCore |
 
-L'écran (s'il y en a un) a quatre pages — vue d'ensemble, MeshCore,
-Reticulum, radio — qu'un appui court fait défiler.
+### Changer de mode avec le bouton
+
+Sur les cartes avec écran et bouton (52 environnements) :
+
+- **appui court** : page suivante (vue d'ensemble, MeshCore, Reticulum, radio) ;
+- **appui long** : ouvre le menu **Mode** — `MC + Reticulum`, `MeshCore`,
+  `Reticulum`, `RNode modem` ; les appuis courts déplacent le curseur, un
+  **appui long** enregistre le mode choisi et redémarre la carte (un appui
+  long sur le mode actuel, ou 15 s sans appui, referme le menu).
+
+Sur les cartes sans écran dont le fichier de carte MeshCore indique le
+sens du bouton (`USER_BTN_PRESSED` : T1000-E, MeshTracker X1, R1 Neo…), un
+**triple appui** passe au mode suivant et redémarre ; la console l'annonce.
+Partout, `arb mode …` fait la même chose depuis la console.
 
 ## Ajouter une carte, suivre MeshCore
 

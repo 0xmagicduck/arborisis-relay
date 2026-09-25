@@ -294,6 +294,11 @@ public:
 
   void error(uint8_t code) { byte(rnode::CMD_ERROR, code); }
 
+  // Sent once at boot, as RNode does: a host that was using this device
+  // before a reset (on a serial bridge, the port survives it) learns that
+  // the radio lost its configuration and sets it up again.
+  void announceReset() { byte(rnode::CMD_RESET, rnode::RESET_BYTE); }
+
 private:
   void apply() {
     if (_ch.valid()) {

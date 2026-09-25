@@ -4,10 +4,48 @@
 #include "ArbApp.h"
 #include "ArbPlatform.h"
 #include <target.h>
+#include <helpers/ui/MomentaryButton.h>
 
 namespace arb {
 
 ArbUI ui;
+
+// The modes the button offers, in menu order. Without Reticulum on the
+// board (STM32WL), only the two that make sense there.
+#if ARB_WITH_RNS
+static const uint8_t MENU_MODES[] = { MODE_DUAL, MODE_MESHCORE, MODE_RNS, MODE_RNODE };
+#else
+static const uint8_t MENU_MODES[] = { MODE_MESHCORE, MODE_RNODE };
+#endif
+static const uint8_t MENU_N = sizeof(MENU_MODES);
+
+static const char* modeLabel(uint8_t m) {
+  switch (m) {
+    case MODE_DUAL:     return "MC + Reticulum";
+    case MODE_MESHCORE: return "MeshCore";
+    case MODE_RNS:      return "Reticulum";
+    case MODE_RNODE:    return "RNode modem";
+    default:            return "?";
+  }
+}
+
+static uint8_t menuIndexOf(uint8_t mode) {
+  for (uint8_t i = 0; i < MENU_N; i++) if (MENU_MODES[i] == mode) return i;
+  return 0;
+}
+
+static uint8_t nextMode(uint8_t mode) { return MENU_MODES[(menuIndexOf(mode) + 1) % MENU_N]; }
+
+void ArbUI::applyMode(uint8_t mode) {
+  Serial.print("\r\n[arb] button: mode ");
+  Serial.print(modeName(mode));
+  Serial.println(", saved, restarting");
+  Serial.flush();
+  app.cfg.mode = mode;
+  appSaveConfig();
+  delay(1200);   // time to read the screen
+  appReboot();
+}
 
 #ifdef DISPLAY_CLASS
 
@@ -32,21 +70,48 @@ void ArbUI::splash(const char* line) {
   display.endFrame();
 }
 
+void ArbUI::button(int ev, uint32_t now) {
+  if (ev != BUTTON_EVENT_CLICK && ev != BUTTON_EVENT_LONG_PRESS) return;
+  _off_at = now + (app.cfg.display_timeout ? app.cfg.display_timeout * 1000UL : 0);
+  _next_refresh = now;
+  if (!_on) {                      // the first press only wakes the display
+    display.turnOn();
+    _on = true;
+    return;
+  }
+  if (_menu) {
+    _menu_until = now + 15000;
+    if (ev == BUTTON_EVENT_CLICK) {
+      _menu_sel = (_menu_sel + 1) % MENU_N;
+    } else if (MENU_MODES[_menu_sel] == app.cfg.mode) {
+      _menu = false;               // long press on the current mode: nothing to do
+    } else {
+      display.startFrame();
+      display.setTextSize(1);
+      display.setColor(UIColor::primary_txt);
+      display.drawTextCentered(display.width() / 2, 12, "Mode");
+      display.drawTextCentered(display.width() / 2, 28, modeLabel(MENU_MODES[_menu_sel]));
+      display.drawTextCentered(display.width() / 2, 44, "restarting...");
+      display.endFrame();
+      applyMode(MENU_MODES[_menu_sel]);
+    }
+    return;
+  }
+  if (ev == BUTTON_EVENT_LONG_PRESS) {
+    _menu = true;
+    _menu_sel = menuIndexOf(app.cfg.mode);
+    _menu_until = now + 15000;
+  } else {
+    _page = (_page + 1) % PAGES;
+  }
+}
+
 void ArbUI::loop() {
   const uint32_t now = millis();
 #if defined(PIN_USER_BTN)
-  int ev = user_btn.check();
-  if (ev == BUTTON_EVENT_CLICK || ev == BUTTON_EVENT_LONG_PRESS) {
-    if (!_on) {
-      display.turnOn();
-      _on = true;
-    } else if (ev == BUTTON_EVENT_CLICK) {
-      _page = (_page + 1) % PAGES;
-    }
-    _off_at = now + (app.cfg.display_timeout ? app.cfg.display_timeout * 1000UL : 0);
-    _next_refresh = now;
-  }
+  button(user_btn.check(), now);
 #endif
+  if (_menu && (int32_t)(now - _menu_until) > 0) { _menu = false; _next_refresh = now; }
   if (!_on) return;
   if (app.cfg.display_timeout && (int32_t)(now - _off_at) > 0) {
     display.turnOff();
@@ -54,10 +119,24 @@ void ArbUI::loop() {
     return;
   }
   if ((int32_t)(now - _next_refresh) < 0) return;
-  _next_refresh = now + (display.isEink() ? 60000UL : 1000UL);
+  _next_refresh = now + (display.isEink() && !_menu ? 60000UL : (_menu ? 250UL : 1000UL));
   display.startFrame();
-  render();
+  if (_menu) renderMenu(); else render();
   display.endFrame();
+}
+
+void ArbUI::renderMenu() {
+  display.setTextSize(1);
+  display.setColor(UIColor::primary_txt);
+  display.setCursor(0, 0);
+  display.print("Mode  (long = OK)");
+  for (uint8_t i = 0; i < MENU_N; i++) {
+    char l[40];
+    const uint8_t m = MENU_MODES[i];
+    snprintf(l, sizeof(l), "%c %s%s", i == _menu_sel ? '>' : ' ', modeLabel(m), m == app.cfg.mode ? " *" : "");
+    display.setCursor(0, 12 + i * 11);
+    display.print(l);
+  }
 }
 
 void ArbUI::render() {
@@ -141,10 +220,27 @@ void ArbUI::render() {
 
 #else  // no display on this board
 
-void ArbUI::begin() {}
-void ArbUI::loop() {}
+#if defined(PIN_USER_BTN) && defined(USER_BTN_PRESSED)
+// The board file says which level a press is: safe to read the button.
+static MomentaryButton headless_btn(PIN_USER_BTN, 1000, USER_BTN_PRESSED == LOW);
+#endif
+
+void ArbUI::begin() {
+#if defined(PIN_USER_BTN) && defined(USER_BTN_PRESSED)
+  headless_btn.begin();
+#endif
+}
+
+void ArbUI::loop() {
+#if defined(PIN_USER_BTN) && defined(USER_BTN_PRESSED)
+  if (headless_btn.check() == BUTTON_EVENT_TRIPLE_CLICK) applyMode(nextMode(app.cfg.mode));
+#endif
+}
+
 void ArbUI::splash(const char*) {}
 void ArbUI::render() {}
+void ArbUI::renderMenu() {}
+void ArbUI::button(int, uint32_t) {}
 
 #endif
 

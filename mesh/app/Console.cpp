@@ -40,9 +40,10 @@ void Console::loop() {
         break;
     }
   }
-  // An empty frame left open by a closing FEND, and nothing since: the
-  // KISS burst is over, what comes next may be typed text.
-  if (_kiss.openAndEmpty() && (uint32_t)(now - _last_rx) > 50) _kiss.abandonFrame();
+  // An empty frame left open by a closing FEND, and nothing for a quarter
+  // of a second: the KISS burst is over, what comes next may be typed text.
+  // (A host writes a whole frame at once; a person types a while after.)
+  if (_kiss.openAndEmpty() && (uint32_t)(now - _last_rx) > 250) _kiss.abandonFrame();
 
   rnode_host.tick(now);
 }
@@ -67,7 +68,7 @@ void Console::textByte(uint8_t c) {
 
 void Console::runLine(char* line) {
   while (*line == ' ') line++;
-  char reply[640];
+  char reply[1024];
   reply[0] = 0;
   if (strncmp(line, "arb", 3) == 0 && (line[3] == 0 || line[3] == ' ')) {
     char* args = line + 3;

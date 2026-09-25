@@ -177,6 +177,10 @@ void setup() {
   if (app.cfg.mode == MODE_RNS) app.cfg.mode = MODE_RNODE;
 #endif
 
+  // A new MeshCore identity draws on the radio's noise: before the arbiter
+  // takes the chip.
+  loadMeshCoreIdentity();
+
   arbiter.begin(radio_driver, board);
   arbiter.setDutyCycle(app.cfg.duty_cycle_x100 / 10000.0f);
   app.mc_running = modeHasMeshCore(app.cfg.mode);
@@ -185,7 +189,6 @@ void setup() {
   // MeshCore: always loaded — its prefs are the ones its CLI edits, in
   // every mode — and run only in the modes that have it. begin() hands its
   // channel and power to the arbiter through the port.
-  loadMeshCoreIdentity();
   the_mesh.begin(&ARB_FS);
   app.mc_name = the_mesh.getNodeName();
   sensors.begin();
@@ -200,6 +203,7 @@ void setup() {
   arbiter.setRxHandler(&rns_side);
 
   console.begin();
+  rnode_host.announceReset();
   startBle();
   ui.begin();
 
@@ -208,7 +212,7 @@ void setup() {
 #endif
   board.onBootComplete();
 
-  char status[640];
+  char status[800];
   Console::statusText(status, sizeof(status));
   Serial.print("\r\n[arb] ");
   Serial.println(status);

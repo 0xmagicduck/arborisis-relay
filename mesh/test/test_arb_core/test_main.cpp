@@ -346,6 +346,17 @@ TEST(RNodeHost, DataBothWays) {
   EXPECT_FALSE(h.attached());
 }
 
+TEST(RNodeHost, AnnouncesResetLikeAnRNode) {
+  FakeBackend be;
+  VecSink out;
+  RNodeHost h(be, out, RNodeIdentity());
+  h.announceReset();
+  auto f = parse(out.v);
+  ASSERT_EQ(f.size(), 1u);
+  EXPECT_EQ(f[0].cmd, rnode::CMD_RESET);
+  EXPECT_EQ(f[0].p, (std::vector<uint8_t>{ 0xF8 }));
+}
+
 TEST(RNodeHost, DataRefusedWhileRadioOff) {
   FakeBackend be;
   VecSink out;

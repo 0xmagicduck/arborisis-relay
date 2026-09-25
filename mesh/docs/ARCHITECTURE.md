@@ -8,12 +8,12 @@ mené à cette conception est dans [`ANALYSE-FIRMWARE-ACTUEL.md`](ANALYSE-FIRMWA
 ## Vue d'ensemble
 
 ```
-                 USB (console partagée)                       écran + bouton
+       USB (console partagée) et BLE (« RNode XXXX »)         écran + bouton
    rnsd / Sideband / MeshChat        outils MeshCore / terminal       │
-            │ trames KISS                     │ lignes texte          │
+            │ trames KISS (USB, BLE)          │ lignes texte (USB)    │
             ▼                                 ▼                       ▼
      ┌─────────────┐   « arb … »   ┌──────────────────┐        ┌───────────┐
-     │  RNodeHost  │◄──── Console ─┤ CLI du répéteur  │        │  ArbUI    │
+     │ RNodeHost×2 │◄──── Console ─┤ CLI du répéteur  │        │  ArbUI    │
      │ (protocole  │               │ MeshCore (MyMesh)│        │ 4 pages   │
      │   RNode)    │               └────────┬─────────┘        └───────────┘
      └──────┬──────┘                        │ mesh::Radio
@@ -132,16 +132,20 @@ annoncée est celle de MeshCore suivie de la nôtre
 
 ## 4. Reticulum : deux usages du même canal
 
-1. **Modem RNode pour un hôte** (`RNodeHost.h`). Sur le port USB, la carte
-   parle le protocole RNode que `RNS/Interfaces/RNodeInterface.py` attend :
+1. **Modem RNode pour un hôte** (`RNodeHost.h`). Sur le port USB, et en
+   Bluetooth LE sur les cartes ESP32 et nRF52 (`BleLink`), la carte parle
+   le protocole RNode que `RNS/Interfaces/RNodeInterface.py` attend :
    détection, version ≥ 1.52, plateforme, écho exact de chaque paramètre
    radio, `CMD_DATA` dans les deux sens précédé de RSSI/SNR, `CMD_READY`,
-   rapports de canal, de PHY et de batterie. `rnsd`, Sideband (USB),
-   MeshChat et NomadNet l'utilisent comme n'importe quel RNode — sur toutes
-   les cartes, y compris celles sans place pour Reticulum embarqué. Tant
-   qu'un hôte est attaché avec la radio allumée, **son** canal devient le
-   canal Reticulum ; à son départ (`CMD_LEAVE` ou port fermé), le canal
-   configuré revient.
+   rapports de canal, de PHY et de batterie, `CMD_RESET` au démarrage.
+   `rnsd`, Sideband, MeshChat et NomadNet l'utilisent comme n'importe quel
+   RNode — sur toutes les cartes, y compris celles sans place pour
+   Reticulum embarqué. En BLE, la carte s'annonce « RNode XXXX » avec le
+   service UART de Nordic, appairage par code à six chiffres (MITM, lié),
+   affiché à l'écran et donné par `arb ble` — comme un RNode. Deux hôtes
+   (USB et BLE) peuvent être attachés en même temps : chacun reçoit les
+   paquets, et le canal Reticulum est celui du dernier hôte qui a allumé
+   sa radio ; quand plus aucun n'en a, le canal configuré revient.
 2. **Nœud de transport embarqué** (`RnsStack.cpp`, microReticulum de
    `../lib/microReticulum`). Une `LoRaInterface` en mode `FULL`, transport
    activable (`arb rns transport`), table de chemins dimensionnée par
@@ -167,6 +171,14 @@ une interface C++ sans en-tête de l'une ou de l'autre.
 
 Sur STM32WL (64 Ko de RAM), Reticulum embarqué n'existe pas : `dual` y
 devient `meshcore` et `rns` devient `rnode`.
+
+Le mode se change à la console (`arb mode …`) ou au **bouton** de la carte
+(`ArbUI`) : appui long pour ouvrir le menu, appuis courts pour choisir,
+appui long pour valider (enregistrement, redémarrage). Le bouton lu est
+celui que la variante MeshCore déclare (`user_btn`), avec sa polarité ;
+sans écran, seules les cartes dont la variante donne `USER_BTN_PRESSED`
+réagissent (triple appui = mode suivant), pour ne jamais lire un bouton
+dans le mauvais sens.
 
 ## 6. Console USB
 
@@ -203,11 +215,32 @@ Vérifié dans ce dépôt :
 - tests hôtes (`pio test -e arb_native`) : format RNode octet par octet
   (découpage, réassemblage, trame vide résiduelle, paquet court entre deux
   moitiés), KISS, protocole hôte RNode tel que RNS le vérifie, plan
-  d'écoute, tri sur canal partagé, budget d'airtime, configuration.
+  d'écoute, tri sur canal partagé, budget d'airtime, configuration ;
+- **bout en bout avec la vraie pile Reticulum** (`test/sim/e2e_rns.py`) :
+  deux instances RNS (paquet `rns`, son propre `RNodeInterface`) ouvrent
+  chacune un pseudo-terminal ; entre les deux, `rnode_air` fait passer
+  les octets par le code du firmware — `RNodeHost`, `rnodeSplit`,
+  `RNodeReassembler` — comme sur un canal LoRa. Les deux interfaces se
+  configurent et passent en ligne, l'annonce de l'une donne un chemin à
+  l'autre, un paquet de 20 octets et un de 380 (deux trames LoRa) sont
+  livrés et leurs preuves reviennent ;
+- **l'arbitre radio simulé** (`test/test_arb_arbiter`) : le vrai
+  `RadioArbiter.cpp` tourne sur une puce RadioLib simulée et un canal LoRa
+  virtuel (un paquet n'est reçu que si le récepteur était sur son canal
+  assez tôt pour se caler sur le préambule et y est resté ; la CAD voit un
+  préambule qui couvre sa fenêtre). Avec les canaux belges et un paquet
+  toutes les 4 s sur chaque réseau, il capte **99 à 100 %** de ce que
+  capterait un récepteur idéal (toujours sur le bon canal, un paquet à la
+  fois) — 99,1 % avec une boucle principale qui cale 60 ms toutes les 2 s,
+  99,6 % sous trafic lourd (un paquet par seconde sur chaque canal), 100 %
+  sur canal partagé ; les émissions partent sur le bon canal avec le bon
+  préambule, la seconde moitié d'un paquet RNode juste après la première,
+  et le budget d'airtime commun est respecté.
 
-**Pas encore vérifié sur matériel** : l'écoute de deux canaux par CAD, le
-partage de l'émetteur, et le comportement RF des cartes. Les modes à un
-seul protocole réutilisent des mécanismes éprouvés (Dispatcher de MeshCore,
-format RNode) ; le mode `dual` sur deux canaux est **expérimental** tant
-qu'il n'a pas été mesuré — `arb status` et la page « Radio » de l'écran
-donnent le nombre de coups d'œil et de détections pour le faire.
+**Pas encore vérifié sur matériel** : le comportement RF réel (bruit,
+collisions, CAD imparfaite), le temps de réaccord des puces et
+l'appairage BLE. Les modes à un seul protocole réutilisent des mécanismes
+éprouvés (Dispatcher de MeshCore, format RNode) ; le mode `dual` sur deux
+canaux reste **expérimental** tant qu'il n'a pas été mesuré sur une vraie
+carte — `arb status` et la page « Radio » de l'écran donnent le nombre de
+coups d'œil et de détections pour le faire.
