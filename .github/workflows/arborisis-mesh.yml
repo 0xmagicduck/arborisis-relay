@@ -5,6 +5,7 @@ name: Arborisis Mesh
 
 on:
   push:
+    branches: [main]
     paths:
       - "mesh/**"
       - "lib/microReticulum/**"
@@ -15,6 +16,12 @@ on:
       - "lib/microReticulum/**"
       - ".github/workflows/arborisis-mesh.yml"
   workflow_dispatch:
+
+# A branch's pull request builds once per push, and a newer push cancels the
+# builds of the one before: 94 boards per run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tests:

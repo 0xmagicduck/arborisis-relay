@@ -26,7 +26,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RESULTS = ROOT / "docs" / "build-results.json"
+# ARB_RESULTS: somewhere else while a long pass runs (the file is in git).
+RESULTS = Path(os.environ.get("ARB_RESULTS", ROOT / "docs" / "build-results.json"))
 PIO = os.environ.get("PIO", shutil.which("pio") or str(ROOT.parent / ".venv" / "bin" / "pio"))
 
 
