@@ -128,7 +128,43 @@ l'arbitre (`McRadioPort`). Tout le reste est celui de MeshCore : même CLI
 (`set freq`, `neighbors`, `advert`, `password`…), même administration à
 distance depuis l'application MeshCore, mêmes régions, même ACL. La version
 annoncée est celle de MeshCore suivie de la nôtre
-(`v1.17.1-arb0.1.0`) : les outils MeshCore coupent au tiret.
+(`v1.17.1-arb0.2.0`) : les outils MeshCore coupent au tiret.
+
+### Le compagnon (mode `companion`)
+
+L'application MeshCore ne parle pas à un répéteur : en Bluetooth, elle se
+connecte à un **compagnon** (`examples/companion_radio`), qui porte les
+contacts, les canaux et les messages du téléphone. Le mode `companion`
+fait tourner ce compagnon à la place du répéteur, sur le même port de
+l'arbitre :
+
+- `app/mcc/` est le compagnon de MeshCore, importé par
+  `tools/import_companion.py` (appelé par `sync_meshcore.sh`) : ses six
+  fichiers utiles, les noms qui entreraient en collision avec ceux du
+  répéteur renommés (`MyMesh` → `CompanionMesh`, `NodePrefs` →
+  `CompanionNodePrefs`, `DataStore` → `CompanionStore`…), la même ligne
+  `#include "McRedirect.h"` que le répéteur, LittleFS au lieu de SPIFFS sur
+  ESP32 (y compris pour la commande « format » de l'application), et un seul
+  système de fichiers sur nRF52 (la disposition standard, voir § 7) ;
+- `app/Companion.cpp` le construit **seulement dans ce mode** (contacts,
+  canaux, file de messages : quelques dizaines de kilo-octets que les autres
+  modes laissent à Reticulum), avec le `SerialBLEInterface` de MeshCore :
+  la carte s'annonce « MeshCore-<nom> », PIN aléatoire à chaque démarrage
+  sur une carte à écran (affiché en première page), `123456` sans écran,
+  ou celui que l'application a fixé ;
+- l'identité MeshCore est la même que celle du répéteur (même fichier) ;
+  les préférences, contacts et canaux sont ceux du compagnon, dans ses
+  propres fichiers ;
+- le RNode en Bluetooth est coupé dans ce mode (le Bluetooth est à
+  l'application MeshCore), le RNode en USB reste ; la console garde les
+  commandes `arb`, les autres lignes (CLI du répéteur) sont refusées ;
+- les tailles du compagnon sont des macros de MeshCore qui dimensionnent
+  aussi `BaseChatMesh.cpp`, donc fixées pour toute la compilation
+  (`[arborisis_companion]` dans `platformio.ini`) : 200 contacts sur ESP32,
+  100 sur nRF52, 40 canaux.
+
+Il n'existe que sur les familles à Bluetooth (ESP32, nRF52) ; ailleurs,
+`arb mode companion` est refusé.
 
 ## 4. Reticulum : deux usages du même canal
 
@@ -166,6 +202,7 @@ une interface C++ sans en-tête de l'une ou de l'autre.
 |---|---|---|---|
 | `dual` (défaut) | répéteur | transport | oui |
 | `meshcore` | répéteur | — | oui (l'hôte prend le canal Reticulum) |
+| `companion` | compagnon (application MeshCore, Bluetooth) | — | oui (USB) |
 | `rns` | — | transport | oui |
 | `rnode` | — | — | oui |
 
@@ -199,7 +236,7 @@ partagé et restée vide 50 ms rend la main au texte.
 |---|---|---|---|
 | ESP32, ESP32-S3, ESP32-C3 | LittleFS (partition `spiffs`) | oui, chemins persistants | Heltec V3 : RAM 21,7 %, flash 42 % |
 | ESP32-C6 | LittleFS | oui | Arduino 3.x (pioarduino), expérimental chez MeshCore |
-| nRF52840 | InternalFS | oui, sans persistance des chemins | capteurs optionnels retirés pour tenir en flash (RAK4631 : 97,4 %) |
+| nRF52840 | InternalFS | oui, sans persistance des chemins | capteurs optionnels retirés, Curve25519 en `-Os` (RAK4631 : 89,2 % avec le compagnon) |
 | RP2040 | LittleFS | oui | |
 | STM32WL | InternalFS | non | modem RNode + répéteur MeshCore |
 
@@ -216,7 +253,13 @@ Place en flash, réglée par `tools/gen_envs.py` carte par carte :
   `default_8MB.csv` ou `default_16MB.csv`.
 - nRF52840 : une variante liée avec `…_extrafs.ld` (la zone applicative
   cédée à un second système de fichiers, pour les contacts du compagnon)
-  revient à la disposition standard : le répéteur ne s'en sert pas.
+  revient à la disposition standard : MeshCore, son compagnon et Reticulum
+  ont besoin de la place, et le compagnon garde ses contacts sur InternalFS.
+  Le cœur Adafruit compile tout en `-Ofast`, où le Curve25519 de la
+  bibliothèque Crypto (celui de microReticulum) déroule ses boucles sur
+  ~80 Ko ; `tools/arb_size.py` le compile en `-Os` (moins de 3 Ko). Les
+  capteurs optionnels de MeshCore sont retirés, BME680/BSEC compris (GPS
+  gardé).
 - RP2040 : la bibliothèque `BLE` d'arduino-pico est ignorée, comme dans
   les environnements RP2040 de MeshCore.
 

@@ -42,6 +42,11 @@ jobs:
         run: |
           python3 tools/gen_envs.py
           git diff --exit-code arborisis_envs.ini docs/boards.json
+      - name: The MeshCore companion in app/mcc is the vendored one
+        working-directory: mesh
+        run: |
+          python3 tools/import_companion.py
+          git diff --exit-code app/mcc
       - name: Host tests
         working-directory: mesh
         run: pio test -e arb_native

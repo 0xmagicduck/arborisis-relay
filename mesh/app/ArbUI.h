@@ -4,7 +4,8 @@
 //
 // With a display (any MeshCore display driver: SSD1306, SH1106, ST7789,
 // e-ink…): four pages — overview, MeshCore, Reticulum, radio — turned by a
-// short press; the display goes dark after the configured timeout and wakes
+// short press (in the companion mode the MeshCore page, with the Bluetooth
+// name and PIN the phone asks for, comes first); the display goes dark after the configured timeout and wakes
 // on a press. A long press opens the mode menu: short presses move through
 // the modes, a long press on one saves it and restarts the board in it (a
 // long press on the current mode, or 15 s without a press, closes the menu).

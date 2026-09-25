@@ -4,10 +4,10 @@
 #   tools/sync_meshcore.sh <commit-or-tag> [path-to-existing-checkout]
 #
 # Arborisis Mesh builds on MeshCore's hardware layer (variants/, boards/,
-# src/helpers/radiolib) and runs its repeater, so the tree below mirrors
-# MeshCore's layout: the variant ini files use paths relative to that
-# layout (-I variants/<board>, +<../variants/<board>>) and must find them
-# where MeshCore puts them. Nothing under the directories listed in
+# src/helpers/radiolib) and runs its repeater and its companion, so the tree
+# below mirrors MeshCore's layout: the variant ini files use paths relative
+# to that layout (-I variants/<board>, +<../variants/<board>>) and must find
+# them where MeshCore puts them. Nothing under the directories listed in
 # VENDORED is edited by hand: our code lives in app/, test/, tools/, docs/
 # and platformio.ini / arborisis_envs.ini. Re-run this script to move to a
 # newer MeshCore, then regenerate the environments (tools/gen_envs.py) and
@@ -58,3 +58,7 @@ s = s.replace(anchor, anchor + '#include "McRedirect.h"   // Arborisis: radio_dr
 open(p, "w").write(s)
 PY
 echo "app/mc refreshed from examples/simple_repeater"
+
+# The MeshCore companion (mode `companion`: what the MeshCore app connects
+# to), renamed to live next to the repeater: see tools/import_companion.py.
+python3 "$HERE/tools/import_companion.py" "$SRC/examples/companion_radio"

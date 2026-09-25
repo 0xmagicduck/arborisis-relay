@@ -3,7 +3,9 @@
 **Un firmware LoRa pour deux réseaux : MeshCore et Reticulum.** Un nœud
 flashé Arborisis Mesh est à la fois un répéteur MeshCore (le vrai, avec sa
 CLI et l'administration depuis l'application MeshCore), un nœud de
-transport Reticulum, et un modem RNode pour Sideband, `rnsd` ou MeshChat —
+transport Reticulum, et un modem RNode pour Sideband, `rnsd` ou MeshChat ;
+en mode `companion`, il devient le compagnon MeshCore auquel l'application
+MeshCore se connecte en Bluetooth —
 sur **83 cartes** (94 environnements) : ESP32, ESP32-S3, ESP32-C3, ESP32-C6,
 nRF52840, RP2040 et STM32WL, avec des radios SX1262, SX1268, SX1276,
 LLCC68, LR1110, LR2021 et STM32WL.
@@ -24,6 +26,7 @@ LLCC68, LR1110, LR2021 et STM32WL.
 |---|---|---|---|
 | `dual` (défaut) | répéteur | nœud de transport | oui |
 | `meshcore` | répéteur | — | oui |
+| `companion` | compagnon (application MeshCore en Bluetooth) | — | oui |
 | `rns` | — | nœud de transport | oui |
 | `rnode` | — | — | oui |
 
@@ -105,10 +108,28 @@ console), puis choisissez-la comme RNode dans Sideband.
 
 ### Avec l'application MeshCore
 
-Le répéteur apparaît comme n'importe quel répéteur MeshCore : connexion
-avec le mot de passe administrateur (`password` par défaut — **à changer** :
-`password <nouveau>` sur la console), statistiques, voisins, réglages radio
-de MeshCore.
+L'application MeshCore ne se connecte pas à un répéteur : en Bluetooth, elle
+cherche un **compagnon** (« MeshCore-… ») et lui parle le protocole des
+compagnons. Deux usages, donc :
+
+- **Téléphone branché sur la carte** : passez la carte en mode
+  **`companion`** (`arb mode companion`, le menu du bouton — « MeshCore
+  app » —, ou la page /mesh). Elle s'annonce alors **« MeshCore-<nom> »** ;
+  dans l'application, *Connecter* → Bluetooth, choisissez-la et entrez le
+  PIN affiché à l'écran (page MeshCore, affichée en premier dans ce mode)
+  ou donné par `arb ble` sur la console ; sans écran, le PIN est `123456`.
+  Contacts, canaux et messages sont ceux du compagnon MeshCore, inchangé
+  (`examples/companion_radio`, importé dans `app/mcc/`). Dans ce mode, le
+  Bluetooth appartient à l'application MeshCore (le RNode en Bluetooth est
+  coupé, le RNode en USB reste) et Reticulum ne tourne pas sur la carte.
+  Cartes ESP32 et nRF52 (il faut le Bluetooth) ; contacts : 200 sur ESP32,
+  100 sur nRF52 (système de fichiers interne de 28 Ko).
+- **Administrer le répéteur** (modes `dual` et `meshcore`) : depuis
+  l'application, connectée à *un autre* nœud compagnon, le répéteur apparaît
+  comme n'importe quel répéteur MeshCore : connexion avec le mot de passe
+  administrateur (`password` par défaut — **à changer** : `password
+  <nouveau>` sur la console), statistiques, voisins, réglages radio de
+  MeshCore.
 
 ### Console série (115200 bauds)
 
@@ -119,18 +140,18 @@ répéteur MeshCore.
 |---|---|
 | `arb` / `arb status` | état : mode, canaux, plan d'écoute, compteurs, airtime |
 | `arb json` | le même état en JSON (outils, page Web) |
-| `arb mode dual\|meshcore\|rns\|rnode` | change de mode (redémarre) |
+| `arb mode dual\|meshcore\|companion\|rns\|rnode` | change de mode (redémarre) |
 | `arb rns radio 869.525,125,8,5` | canal Reticulum : MHz, kHz, SF, CR (immédiat) |
 | `arb rns freq\|bw\|sf\|cr\|txp <v>` | un paramètre du canal Reticulum |
 | `arb rns transport on\|off` | relayer pour les autres (redémarre) |
 | `arb rns paths <n>` | taille de la table de chemins, 0 = défaut (redémarre) |
-| `arb ble` / `arb ble on\|off` / `arb ble pin <6 chiffres>` | RNode en Bluetooth LE : état, activation, code d'appairage (redémarre) |
+| `arb ble` / `arb ble on\|off` / `arb ble pin <6 chiffres>` | RNode en Bluetooth LE : état, activation, code d'appairage (redémarre) ; en mode `companion`, `arb ble` donne le nom et le PIN du compagnon |
 | `arb duty <%>` | budget d'émission de l'appareil, 0 = sans limite |
 | `arb name <texte>` | nom affiché |
 | `arb display <s>` | extinction de l'écran, 0 = toujours allumé |
 | `arb log on\|off` | journaux Reticulum et arbitre sur la console |
 | `arb reboot` / `arb reset` | redémarrer / réglages Arborisis par défaut |
-| `ver`, `set radio …`, `neighbors`, `advert`, `password …` | CLI MeshCore |
+| `ver`, `set radio …`, `neighbors`, `advert`, `password …` | CLI du répéteur MeshCore (en mode `companion`, l'application MeshCore règle le compagnon) |
 
 ### Changer de mode avec le bouton
 
@@ -138,7 +159,8 @@ Sur les cartes avec écran et bouton :
 
 - **appui court** : page suivante (vue d'ensemble, MeshCore, Reticulum, radio) ;
 - **appui long** : ouvre le menu **Mode** — `MC + Reticulum`, `MeshCore`,
-  `Reticulum`, `RNode modem` ; les appuis courts déplacent le curseur, un
+  `MeshCore app` (le compagnon, sur les cartes à Bluetooth), `Reticulum`,
+  `RNode modem` ; les appuis courts déplacent le curseur, un
   **appui long** enregistre le mode choisi et redémarre la carte (un appui
   long sur le mode actuel, ou 15 s sans appui, referme le menu).
 
@@ -152,8 +174,11 @@ Partout, `arb mode …` fait la même chose depuis la console.
 
 ## Ajouter une carte, suivre MeshCore
 
-Les cartes viennent de MeshCore (`variants/`). Pour suivre une nouvelle
-version de MeshCore :
+Les cartes viennent de MeshCore (`variants/`), le répéteur de
+`examples/simple_repeater` (`app/mc/`) et le compagnon de
+`examples/companion_radio` (`app/mcc/`, renommé par
+`tools/import_companion.py` pour cohabiter avec le répéteur). Pour suivre
+une nouvelle version de MeshCore :
 
 ```bash
 tools/sync_meshcore.sh <commit-ou-tag>     # importe MeshCore, régénère app/mc
@@ -168,5 +193,5 @@ Une carte que MeshCore ajoute devient ainsi une carte Arborisis Mesh.
 
 `app/`, `tools/`, `test/`, `docs/` : GPL-3.0-or-later (comme le reste du
 dépôt). MeshCore (`src/`, `variants/`, `lib/`, `boards/`, `arch/`,
-`examples/`, `app/mc/`) : MIT, voir `LICENSE-MeshCore.txt`. microReticulum
+`examples/`, `app/mc/`, `app/mcc/`) : MIT, voir `LICENSE-MeshCore.txt`. microReticulum
 (`../lib/microReticulum`) : Apache-2.0.

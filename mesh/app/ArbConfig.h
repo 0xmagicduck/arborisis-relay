@@ -24,7 +24,9 @@ enum Mode : uint8_t {
   MODE_RNS      = 1,   // Reticulum on the device (transport), RNode host protocol too
   MODE_MESHCORE = 2,   // MeshCore repeater only (the RNode host can still take the radio)
   MODE_DUAL     = 3,   // MeshCore repeater and Reticulum on the device, sharing the radio
+  MODE_COMPANION = 4,  // MeshCore companion for the MeshCore app, over Bluetooth LE (RNode on USB)
 };
+static const uint8_t MODE_LAST = MODE_COMPANION;
 
 inline const char* modeName(uint8_t m) {
   switch (m) {
@@ -32,18 +34,20 @@ inline const char* modeName(uint8_t m) {
     case MODE_RNS:      return "rns";
     case MODE_MESHCORE: return "meshcore";
     case MODE_DUAL:     return "dual";
+    case MODE_COMPANION: return "companion";
     default:            return "?";
   }
 }
 
 inline bool modeFromName(const char* s, uint8_t& out) {
-  for (uint8_t m = 0; m <= MODE_DUAL; m++) {
+  for (uint8_t m = 0; m <= MODE_LAST; m++) {
     if (strcmp(s, modeName(m)) == 0) { out = m; return true; }
   }
   return false;
 }
 
-inline bool modeHasMeshCore(uint8_t m) { return m == MODE_MESHCORE || m == MODE_DUAL; }
+// MeshCore runs in these modes: the repeater, or the companion.
+inline bool modeHasMeshCore(uint8_t m) { return m == MODE_MESHCORE || m == MODE_DUAL || m == MODE_COMPANION; }
 inline bool modeHasRns(uint8_t m)      { return m == MODE_RNS || m == MODE_DUAL; }
 
 static const uint32_t ARB_CFG_MAGIC   = 0x31425241UL;   // "ARB1"
@@ -120,7 +124,7 @@ inline void configDefaults(ArbConfig& c, int8_t board_max_txp) {
 inline bool configValid(const ArbConfig& c) {
   if (c.magic != ARB_CFG_MAGIC || c.version != ARB_CFG_VERSION || c.size != sizeof(ArbConfig)) return false;
   if (c.crc != configCrc(c)) return false;
-  if (c.mode > MODE_DUAL) return false;
+  if (c.mode > MODE_LAST) return false;
   LoRaChannel ch;
   ch.freq_hz = c.rns_freq_hz; ch.bw_hz = c.rns_bw_hz; ch.sf = c.rns_sf; ch.cr = c.rns_cr;
   if (!ch.valid()) return false;
