@@ -362,6 +362,17 @@
   "ram_used": 93944,
   "seconds": 175
  },
+ "arb_lilygo_t3s3_sx1276": {
+  "error": "",
+  "flash_pct": 60.6,
+  "flash_total": 3145728,
+  "flash_used": 1905913,
+  "ok": true,
+  "ram_pct": 28.7,
+  "ram_total": 327680,
+  "ram_used": 93928,
+  "seconds": 221
+ },
  "arb_rak_4631": {
   "error": "",
   "flash_pct": 97.7,
