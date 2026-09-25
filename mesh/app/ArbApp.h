@@ -21,6 +21,7 @@ struct App {
   uint32_t boot_ms = 0;
   bool config_loaded = false;    // false: defaults (first boot, or unreadable record)
   char ble_name[16] = {0};       // "RNode 1A2B" when BLE runs
+  const char* board_name = "";   // the MeshCore variant's name for the board
 };
 
 extern App app;

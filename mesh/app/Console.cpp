@@ -344,14 +344,16 @@ void Console::statusJson(char* out, size_t n) {
   const ChannelPlan& p = arbiter.plan();
   const ArbiterStats& s = arbiter.stats();
   snprintf(out, n,
-    "{\"fw\":\"%s\",\"platform\":\"%s\",\"mode\":\"%s\",\"name\":\"%s\","
+    "{\"fw\":\"%s\",\"platform\":\"%s\",\"board\":\"%s\",\"mode\":\"%s\",\"name\":\"%s\","
+    "\"caps\":{\"rns\":%s,\"ble\":%s},"
     "\"mc\":{\"on\":%s,\"freq\":%lu,\"bw\":%lu,\"sf\":%u,\"txp\":%d,\"rx\":%lu,\"tx\":%lu},"
     "\"rns\":{\"on\":%s,\"host\":%s,\"freq\":%lu,\"bw\":%lu,\"sf\":%u,\"cr\":%u,\"txp\":%d,"
     "\"rx\":%lu,\"tx\":%lu,\"paths\":%lu,\"id\":\"%s\",\"transport\":%s},"
     "\"radio\":{\"state\":\"%s\",\"listen\":%d,\"peek\":%d,\"shared\":%s,\"degraded\":%s,"
     "\"peek_every_ms\":%lu,\"peeks\":%lu,\"peek_hits\":%lu,\"noise\":%d,\"airtime\":%.4f,\"duty\":%.2f,"
     "\"refusals\":%lu,\"rx_errors\":%lu},\"ble\":{\"on\":%s,\"name\":\"%s\",\"connected\":%s},\"uptime\":%lu}",
-    ARB_VERSION, platformName(), modeName(c.mode), c.name,
+    ARB_VERSION, platformName(), app.board_name, modeName(c.mode), c.name,
+    ARB_WITH_RNS ? "true" : "false", ARB_WITH_BLE ? "true" : "false",
     app.mc_running ? "true" : "false", (unsigned long)mc.freq_hz, (unsigned long)mc.bw_hz, mc.sf, mc.txp_dbm,
     (unsigned long)s.rx[PROTO_MC], (unsigned long)s.tx[PROTO_MC],
     rns_side.stackRunning() ? "true" : "false", rns_side.hostActive() ? "true" : "false",

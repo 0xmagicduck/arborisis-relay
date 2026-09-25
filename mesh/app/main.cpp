@@ -137,6 +137,7 @@ void setup() {
   app.boot_ms = millis();
 
   board.begin();
+  app.board_name = board.getManufacturerName();
 
 #ifdef DISPLAY_CLASS
   if (display.begin()) ui.splash("starting...");
