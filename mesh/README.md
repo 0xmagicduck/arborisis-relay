@@ -45,7 +45,7 @@ cd mesh
 ../.venv/bin/pio run                          # toutes les cartes (long)
 ../.venv/bin/pio test -e arb_native           # tests hôtes
 python3 test/sim/e2e_rns.py                   # vraie pile Reticulum contre le protocole RNode (pip install rns)
-python3 tools/release.py arb_heltec_v3 arb_rak_4631   # images + manifest dans dist/
+python3 tools/release.py arb_heltec_v3 arb_rak_4631   # images + manifest.json dans dist/
 ```
 
 Les noms d'environnements sont dans `arborisis_envs.ini` (générés) et dans
@@ -53,9 +53,16 @@ Les noms d'environnements sont dans `arborisis_envs.ini` (générés) et dans
 
 ## Flasher
 
+Depuis le navigateur : la page d'installation de **rns.arborisis.com** (dépôt
+`arborisis-reticulum`) lit le `manifest.json` de `tools/release.py` — même
+format que celui du relais : taille et SHA-256 de chaque fichier, vérifiés
+avant l'écriture — servi sous `/firmware/arborisis-mesh/`. La CI de ce dépôt
+produit ce répertoire complet pour toutes les cartes (artefact
+`arborisis-mesh-firmware`). À la main :
+
 | Famille | Fichier | Comment |
 |---|---|---|
-| ESP32 / S3 / C3 / C6 | `…_merged.bin` | `esptool.py write_flash 0x0 fichier_merged.bin`, ou un flasheur Web Serial ESP |
+| ESP32 / S3 / C3 / C6 | `…_merged.bin` | `esptool.py write_flash 0x0 fichier_merged.bin` (installation) ; `….bin` à `0x10000` pour une mise à jour |
 | nRF52840 | `….uf2` | double appui sur RESET, déposer l'UF2 sur le disque USB qui apparaît |
 | RP2040 | `….uf2` | BOOTSEL + branchement, déposer l'UF2 |
 | STM32WL | `….hex` | STM32CubeProgrammer (SWD) |

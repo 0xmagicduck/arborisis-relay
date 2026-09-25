@@ -34,6 +34,8 @@ def main():
 
     built = [b for b in boards if b["env"] in results]
     ok = [b for b in built if results[b["env"]]["ok"]]
+    blocked = [b for b in built if results[b["env"]].get("blocked")]
+    failed = [b for b in built if not results[b["env"]]["ok"] and not results[b["env"]].get("blocked")]
     fams = Counter(b["family"] for b in boards)
     radios = Counter(RADIO.get(b["radio"], b["radio"]) for b in boards)
 
@@ -44,8 +46,9 @@ def main():
         "et `docs/build-results.json` (`tools/build_matrix.py`). Ne pas éditer à la main.*",
         "",
         f"**{len(boards)} environnements** pour **{len({b['variant'] for b in boards})} cartes** "
-        f"(variantes MeshCore). Compilés lors de la dernière passe : {len(built)}, "
-        f"réussis : **{len(ok)}**.",
+        f"(variantes MeshCore). Dernière passe : **{len(ok)} compilés**, {len(failed)} en échec, "
+        f"{len(blocked)} non vérifiables là où la passe a tourné (une dépendance n'a pas pu être "
+        f"téléchargée — la CI GitHub les compile), {len(boards) - len(built)} non tentés.",
         "",
         "Familles : " + ", ".join(f"{FAMILY.get(k, k)} {v}" for k, v in sorted(fams.items())) + ".  ",
         "Radios : " + ", ".join(f"{k} {v}" for k, v in sorted(radios.items())) + ".",
@@ -61,6 +64,8 @@ def main():
         r = results.get(b["env"])
         if r is None:
             status, ram, fl = "—", "", ""
+        elif r.get("blocked"):
+            status, ram, fl = "⚠️ dépendance non téléchargeable ici", "", ""
         elif r["ok"]:
             status = "✅"
             ram = f"{r['ram_pct']} %" if r.get("ram_pct") is not None else ""

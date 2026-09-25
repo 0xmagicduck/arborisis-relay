@@ -51,9 +51,16 @@ def main(argv):
         ram = re.findall(r"RAM:\s+\[.*?\]\s+([\d.]+)% \(used (\d+) bytes from (\d+) bytes\)", text)
         fl = re.findall(r"Flash:\s+\[.*?\]\s+([\d.]+)% \(used (\d+) bytes from (\d+) bytes\)", text)
         err = ""
+        blocked = False
         if rc != 0:
             m = re.search(r"^.*(error:|overflowed by|Error \d).*$", text, re.M)
             err = m.group(0).strip()[:300] if m else "failed (see log)"
+            # A dependency that could not be downloaded is not the code's
+            # failure (a sandbox or an offline machine): say which URL.
+            d = re.search(r"PackageException: Got the unrecognized status code '(\d+)' when downloaded (\S+)", text)
+            if d:
+                blocked = True
+                err = f"download refused ({d.group(1)}): {d.group(2)}"
         results[env] = {
             "ok": rc == 0,
             "ram_pct": float(ram[-1][0]) if ram else None,
@@ -63,6 +70,7 @@ def main(argv):
             "flash_used": int(fl[-1][1]) if fl else None,
             "flash_total": int(fl[-1][2]) if fl else None,
             "error": err,
+            "blocked": blocked,
             "seconds": round(time.time() - t0),
         }
         print(f"[{i}/{len(names)}] {env}: {'OK' if rc == 0 else 'FAILED'}"
