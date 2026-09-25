@@ -9,9 +9,7 @@
 #include <helpers/MultiSerialInterface.h>
 #include <Arduino.h>
 
-#ifdef PIN_BUZZER
-  #include <helpers/ui/buzzer.h>
-#endif
+// Arborisis: no buzzer include (MeshCore's UI tasks are not built).
 
 #include "CompanionNodePrefs.h"
 

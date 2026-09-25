@@ -17,6 +17,8 @@ and a few lines are adapted:
 - on ESP32 the store uses LittleFS, not SPIFFS: the board's file system
   (app/ArbPlatform.h) — including for the app's "format" command, which
   would otherwise write a SPIFFS over it;
+- the UI task interface does not pull in the buzzer driver: MeshCore's
+  companion UIs are not built (app/ArbUI is the display);
 - on nRF52 the store keeps everything on InternalFS: the Arborisis images
   link with the standard layout (tools/gen_envs.py), where the flash that
   MeshCore's companion gives to a second file system belongs to the
@@ -79,6 +81,12 @@ def main():
                              '#include "CompanionMesh.h"\n'
                              '#include "McRedirect.h"   // Arborisis: radio_driver -> the arbiter\'s MeshCore port\n',
                              dst)
+        if dst == "CompanionUITask.h":
+            # The buzzer belongs to MeshCore's own UI tasks (ui-new/…), which
+            # Arborisis does not build: its header needs a library the
+            # repeater environments do not carry.
+            s = must_replace(s, "#ifdef PIN_BUZZER\n  #include <helpers/ui/buzzer.h>\n#endif\n",
+                             "// Arborisis: no buzzer include (MeshCore's UI tasks are not built).\n", dst)
         if dst == "CompanionStore.cpp":
             s = must_replace(s, '#include "CompanionStore.h"\n',
                              '#include "CompanionStore.h"\n'
