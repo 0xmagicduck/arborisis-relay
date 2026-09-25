@@ -6,6 +6,8 @@
 //                                                       (variants/<board>/)
 //   arbiter      RadioArbiter: the one transceiver, both channels
 //   the_mesh     MeshCore's repeater (app/mc), on the arbiter's MeshCore port
+//   companion    MeshCore's companion (app/mcc, Companion.cpp), in its place
+//                in the `companion` mode: what the MeshCore app connects to
 //   rns_side     Reticulum: RNode host backend + microReticulum transport
 //   rnode_host   the RNode protocol on the USB port (rnsd, Sideband, MeshChat)
 //   console      the USB port: KISS frames, `arb` lines, MeshCore CLI lines
@@ -23,6 +25,7 @@
 #include "ArbStore.h"
 #include "ArbUI.h"
 #include "BleLink.h"
+#include "Companion.h"
 #include "Console.h"
 #include "McRadioPort.h"
 
@@ -65,6 +68,11 @@ void appApplyLive() {
 void appReboot() { board.reboot(); }
 
 int appMeshCoreCommand(char* cmd, char* reply) {
+  if (app.mc_companion) {   // the companion has no text CLI: the app is its console
+    snprintf(reply, 160, "companion mode: MeshCore is set from the MeshCore app (Bluetooth %s)",
+             companionBleName()[0] ? companionBleName() : "off");
+    return 1;
+  }
   the_mesh.handleCommand(0, cmd, reply);   // MeshCore's own repeater CLI
   return 1;
 }
@@ -77,7 +85,7 @@ uint32_t appNeighbourCount() { return 0; }
 
 static void startBle() {
 #if ARB_WITH_BLE
-  if (!app.cfg.ble) return;
+  if (!app.cfg.ble || app.mc_companion) return;   // companion: Bluetooth is the MeshCore app's
   if (app.cfg.ble_pin == 0) {   // first boot: draw a passkey and keep it
     app.cfg.ble_pin = 100000 + (uint32_t)::random(0, 900000);
     saveConfig(app.cfg);
@@ -187,15 +195,30 @@ void setup() {
 
   arbiter.begin(radio_driver, board);
   arbiter.setDutyCycle(app.cfg.duty_cycle_x100 / 10000.0f);
+#if !ARB_WITH_COMPANION
+  if (app.cfg.mode == MODE_COMPANION) app.cfg.mode = MODE_MESHCORE;   // no Bluetooth to reach it by
+#endif
   app.mc_running = modeHasMeshCore(app.cfg.mode);
+  app.mc_companion = app.cfg.mode == MODE_COMPANION;
   arbiter.setEnabled(app.mc_running, false);
 
-  // MeshCore: always loaded — its prefs are the ones its CLI edits, in
-  // every mode — and run only in the modes that have it. begin() hands its
-  // channel and power to the arbiter through the port.
-  the_mesh.begin(&ARB_FS);
-  app.mc_name = the_mesh.getNodeName();
+  // MeshCore: the repeater is always loaded — its prefs are the ones its CLI
+  // edits, in every mode — and run only in the modes that have it; in the
+  // companion mode the companion runs instead. begin() hands its channel and
+  // power to the arbiter through the port.
+  if (app.mc_companion) {
+    if (!companionBegin(has_display)) {
+      Serial.println("[arb] companion: out of memory, MeshCore off");
+      app.mc_running = app.mc_companion = false;
+      arbiter.setEnabled(false, false);
+    }
+    app.mc_name = companionNodeName();
+  } else {
+    the_mesh.begin(&ARB_FS);
+    app.mc_name = the_mesh.getNodeName();
+  }
   sensors.begin();
+  if (app.mc_companion) companionSensorsReady();
 
   // Reticulum.
   rns_side.setHost(0, &rnode_host);
@@ -212,7 +235,7 @@ void setup() {
   ui.begin(has_display);
 
 #if ENABLE_ADVERT_ON_BOOT == 1
-  if (app.mc_running) the_mesh.sendSelfAdvertisement(16000, false);
+  if (app.mc_running && !app.mc_companion) the_mesh.sendSelfAdvertisement(16000, false);
 #endif
   board.onBootComplete();
 
@@ -229,7 +252,8 @@ void loop() {
   }
   arbiter.loop();
   console.loop();
-  if (app.mc_running) the_mesh.loop();
+  if (app.mc_companion) companionLoop();
+  else if (app.mc_running) the_mesh.loop();
   sensors.loop();
   rtc_clock.tick();
   rns_side.loop();

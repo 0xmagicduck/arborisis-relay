@@ -15,7 +15,8 @@ namespace arb {
 
 struct App {
   ArbConfig cfg;
-  bool mc_running = false;       // MeshCore repeater active this boot
+  bool mc_running = false;       // MeshCore active this boot (repeater or companion)
+  bool mc_companion = false;     // ... as the companion, for the MeshCore app (Companion.h)
   const char* mc_name = "";      // MeshCore node name (its prefs)
   const char* mc_pubkey_hex = "";
   uint32_t boot_ms = 0;

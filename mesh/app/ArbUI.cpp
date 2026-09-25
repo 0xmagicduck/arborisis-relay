@@ -3,6 +3,7 @@
 #include "ArbUI.h"
 #include "ArbApp.h"
 #include "ArbPlatform.h"
+#include "Companion.h"
 #include <target.h>
 #include <helpers/ui/MomentaryButton.h>
 
@@ -11,9 +12,14 @@ namespace arb {
 ArbUI ui;
 
 // The modes the button offers, in menu order. Without Reticulum on the
-// board (STM32WL), only the two that make sense there.
-#if ARB_WITH_RNS
+// board (STM32WL), only the ones that make sense there; the companion where
+// there is Bluetooth to reach it by.
+#if ARB_WITH_RNS && ARB_WITH_COMPANION
+static const uint8_t MENU_MODES[] = { MODE_DUAL, MODE_MESHCORE, MODE_COMPANION, MODE_RNS, MODE_RNODE };
+#elif ARB_WITH_RNS
 static const uint8_t MENU_MODES[] = { MODE_DUAL, MODE_MESHCORE, MODE_RNS, MODE_RNODE };
+#elif ARB_WITH_COMPANION
+static const uint8_t MENU_MODES[] = { MODE_MESHCORE, MODE_COMPANION, MODE_RNODE };
 #else
 static const uint8_t MENU_MODES[] = { MODE_MESHCORE, MODE_RNODE };
 #endif
@@ -25,6 +31,7 @@ static const char* modeLabel(uint8_t m) {
     case MODE_MESHCORE: return "MeshCore";
     case MODE_RNS:      return "Reticulum";
     case MODE_RNODE:    return "RNode modem";
+    case MODE_COMPANION: return "MeshCore app";
     default:            return "?";
   }
 }
@@ -57,6 +64,7 @@ void ArbUI::begin(bool display_present) {
 #endif
   _display = display_present;
   if (!_display) return;
+  if (app.mc_companion) _page = 1;   // the name and PIN the phone asks for
   display.turnOn();
   _on = true;
   _off_at = millis() + (app.cfg.display_timeout ? app.cfg.display_timeout * 1000UL : 0);
@@ -171,7 +179,9 @@ void ArbUI::render() {
       line(l);
       snprintf(l, sizeof(l), "air %.1f%% of %.0f%%", arbiter.airtimeLong() * 100.0f, app.cfg.duty_cycle_x100 / 100.0f);
       line(l);
-      if (app.ble_name[0]) {
+      if (app.mc_companion) {
+        snprintf(l, sizeof(l), "App %s %06lu", companionConnected() ? "on " : "pin", (unsigned long)companionBlePin());
+      } else if (app.ble_name[0]) {
         snprintf(l, sizeof(l), "BLE %s %06lu", app.ble_name + 6, (unsigned long)app.cfg.ble_pin);
       } else {
         snprintf(l, sizeof(l), "v%s %s", ARB_VERSION, platformName());
@@ -179,6 +189,20 @@ void ArbUI::render() {
       line(l);
       break;
     case 1:
+      if (app.mc_companion) {   // what the phone needs to find and pair with the board
+        line(companionConnected() ? "MeshCore app: connected" : "MeshCore app: pair");
+        snprintf(l, sizeof(l), "%s", companionNodeName());   // advertised as "MeshCore-<name>": too wide here
+        line(l);
+        snprintf(l, sizeof(l), "PIN %06lu", (unsigned long)companionBlePin());
+        line(l);
+        snprintf(l, sizeof(l), "%.3f MHz %.1f kHz", mc.freq_hz / 1e6, mc.bw_hz / 1e3);
+        line(l);
+        snprintf(l, sizeof(l), "SF%u CR4/%u %d dBm", mc.sf, mc.cr, mc.txp_dbm);
+        line(l);
+        snprintf(l, sizeof(l), "rx %lu tx %lu", (unsigned long)s.rx[PROTO_MC], (unsigned long)s.tx[PROTO_MC]);
+        line(l);
+        break;
+      }
       line("MeshCore repeater");
       snprintf(l, sizeof(l), "%s", app.mc_name);
       line(l);

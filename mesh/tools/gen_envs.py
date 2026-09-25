@@ -244,6 +244,8 @@ def main():
             f"custom_arb_variant = {e['variant']}",
             *([f"board_build.partitions = {e['partitions']}"] if e.get("partitions") else []),
             *([f"board_build.ldscript = {e['ldscript']}"] if e.get("ldscript") else []),
+            # nRF52840: Curve25519 at -Os (tools/arb_size.py), after the variant's own scripts.
+            *([f"extra_scripts = ${{{ref}.extra_scripts}}", "  pre:tools/arb_size.py"] if e["family"] == "nrf52" else []),
             "build_flags =",
             f"  ${{{ref}.build_flags}}",
             "  ${arborisis.build_flags}",
@@ -254,6 +256,7 @@ def main():
             f"  ${{{ref}.build_src_filter}}",
             "  -<../examples/simple_repeater>",
             "  ${arborisis.build_src_filter}",
+            f"  ${{{fam}.build_src_filter}}",
             "lib_deps =",
             f"  ${{{ref}.lib_deps}}",
             "  ${arborisis.lib_deps}",

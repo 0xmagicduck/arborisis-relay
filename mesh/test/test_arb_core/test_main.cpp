@@ -491,13 +491,30 @@ TEST(Config, DefaultsAreTheArborisisChannelAndValid) {
 
 TEST(Config, ModeNames) {
   uint8_t m;
-  for (uint8_t i = 0; i <= MODE_DUAL; i++) {
+  for (uint8_t i = 0; i <= MODE_LAST; i++) {
     ASSERT_TRUE(modeFromName(modeName(i), m));
     EXPECT_EQ(m, i);
   }
   EXPECT_FALSE(modeFromName("bogus", m));
+  EXPECT_TRUE(modeFromName("companion", m));
+  EXPECT_EQ(m, MODE_COMPANION);
   EXPECT_TRUE(modeHasMeshCore(MODE_DUAL) && modeHasRns(MODE_DUAL));
   EXPECT_FALSE(modeHasRns(MODE_RNODE) || modeHasMeshCore(MODE_RNODE));
+  // The companion is MeshCore (the radio's MeshCore channel is its), without
+  // Reticulum on the device.
+  EXPECT_TRUE(modeHasMeshCore(MODE_COMPANION));
+  EXPECT_FALSE(modeHasRns(MODE_COMPANION));
+}
+
+TEST(Config, CompanionModeIsValidAndNothingPast) {
+  ArbConfig c;
+  configDefaults(c, 22);
+  c.mode = MODE_COMPANION;
+  c.crc = configCrc(c);
+  EXPECT_TRUE(configValid(c));
+  c.mode = MODE_LAST + 1;
+  c.crc = configCrc(c);
+  EXPECT_FALSE(configValid(c));
 }
 
 int main(int argc, char** argv) {

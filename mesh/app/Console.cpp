@@ -3,6 +3,7 @@
 #include "Console.h"
 #include "ArbApp.h"
 #include "ArbPlatform.h"
+#include "Companion.h"
 
 #include <stdlib.h>
 
@@ -68,7 +69,9 @@ void Console::textByte(uint8_t c) {
 
 void Console::runLine(char* line) {
   while (*line == ' ') line++;
-  char reply[1024];
+  // `arb json` runs to ~950 bytes with the companion's fields: off the
+  // stack, with room for long uptimes and counters.
+  static char reply[1536];
   reply[0] = 0;
   if (strncmp(line, "arb", 3) == 0 && (line[3] == 0 || line[3] == ' ')) {
     char* args = line + 3;
@@ -122,19 +125,25 @@ bool Console::arbCommand(char* args, char* reply, size_t n) {
 
   if (!strcmp(argv[0], "help")) {
     snprintf(reply, n,
-      "arb [status|json] | arb mode rnode|rns|meshcore|dual | "
+      "arb [status|json] | arb mode rnode|rns|meshcore|dual|companion | "
       "arb rns radio <MHz>,<kHz>,<sf>,<cr> | arb rns freq|bw|sf|cr|txp <v> | "
       "arb rns transport on|off | arb rns paths <n> | arb ble [on|off|pin <n>] | arb duty <%%> | "
       "arb name <text> | arb display <s> | arb log on|off | arb reboot | arb reset. "
-      "Other lines: MeshCore CLI.");
+      "Other lines: MeshCore CLI (repeater modes).");
     return true;
   }
 
   if (!strcmp(argv[0], "mode") && argc >= 2) {
     uint8_t m;
-    if (!modeFromName(argv[1], m)) { snprintf(reply, n, "modes: rnode rns meshcore dual"); return false; }
+    if (!modeFromName(argv[1], m)) { snprintf(reply, n, "modes: rnode rns meshcore dual companion"); return false; }
 #if !ARB_WITH_RNS
     if (modeHasRns(m)) { snprintf(reply, n, "no room for Reticulum on this board: rnode or meshcore"); return false; }
+#endif
+#if !ARB_WITH_COMPANION
+    if (m == MODE_COMPANION) {
+      snprintf(reply, n, "no Bluetooth LE on this board: the MeshCore app cannot reach a companion");
+      return false;
+    }
 #endif
     if (m == c.mode) { snprintf(reply, n, "mode already %s", modeName(m)); return true; }
     c.mode = m;
@@ -218,6 +227,12 @@ bool Console::arbCommand(char* args, char* reply, size_t n) {
 
   if (!strcmp(argv[0], "ble")) {
 #if ARB_WITH_BLE
+    if (argc == 1 && app.mc_companion) {
+      snprintf(reply, n, "companion: name \"%s\", pin %06lu, %s (RNode over BLE: off in this mode)",
+               companionBleName(), (unsigned long)companionBlePin(),
+               companionConnected() ? "MeshCore app connected" : "advertising");
+      return true;
+    }
     if (argc == 1) {
       snprintf(reply, n, "ble %s, name \"%s\", pin %06lu, %s", c.ble ? "on" : "off", app.ble_name,
                (unsigned long)c.ble_pin, ble.connected() ? (ble.authenticated() ? "paired host" : "connected") : "idle");
@@ -309,6 +324,23 @@ bool Console::arbCommand(char* args, char* reply, size_t n) {
 
 // ── Status ─────────────────────────────────────────────────────────────────
 
+namespace {
+
+// A name someone else chose (the companion's, from the MeshCore app), made
+// safe inside a JSON string, as `arb name` does for ours.
+const char* jsonSafe(const char* in, char* out, size_t n) {
+  size_t j = 0;
+  for (size_t i = 0; in[i] && j + 1 < n; i++) {
+    char ch = in[i];
+    if ((uint8_t)ch < 32) continue;
+    out[j++] = (ch == '"' || ch == '\\') ? '\'' : ch;
+  }
+  out[j] = 0;
+  return out;
+}
+
+}  // namespace
+
 void Console::statusText(char* out, size_t n) {
   const ArbConfig& c = app.cfg;
   const LoRaChannel& mc = arbiter.channel(PROTO_MC);
@@ -334,7 +366,8 @@ void Console::statusText(char* out, size_t n) {
     arbiter.stateName(), how, p.degraded ? " (degraded)" : "",
     (unsigned long)s.peek_hits, (unsigned long)s.peeks, arbiter.noiseFloor(),
     arbiter.airtimeLong() * 100.0f, c.duty_cycle_x100 / 100.0f,
-    app.ble_name[0] ? " | BLE " : "", app.ble_name);
+    app.mc_companion ? " | companion BLE " : app.ble_name[0] ? " | BLE " : "",
+    app.mc_companion ? companionBleName() : app.ble_name);
 }
 
 void Console::statusJson(char* out, size_t n) {
@@ -343,17 +376,19 @@ void Console::statusJson(char* out, size_t n) {
   const LoRaChannel& rn = arbiter.channel(PROTO_RNS);
   const ChannelPlan& p = arbiter.plan();
   const ArbiterStats& s = arbiter.stats();
+  char name_esc[40], ble_esc[56];
   snprintf(out, n,
     "{\"fw\":\"%s\",\"platform\":\"%s\",\"board\":\"%s\",\"mode\":\"%s\",\"name\":\"%s\","
-    "\"caps\":{\"rns\":%s,\"ble\":%s},"
+    "\"caps\":{\"rns\":%s,\"ble\":%s,\"companion\":%s},"
     "\"mc\":{\"on\":%s,\"freq\":%lu,\"bw\":%lu,\"sf\":%u,\"txp\":%d,\"rx\":%lu,\"tx\":%lu},"
     "\"rns\":{\"on\":%s,\"host\":%s,\"freq\":%lu,\"bw\":%lu,\"sf\":%u,\"cr\":%u,\"txp\":%d,"
     "\"rx\":%lu,\"tx\":%lu,\"paths\":%lu,\"id\":\"%s\",\"transport\":%s},"
     "\"radio\":{\"state\":\"%s\",\"listen\":%d,\"peek\":%d,\"shared\":%s,\"degraded\":%s,"
     "\"peek_every_ms\":%lu,\"peeks\":%lu,\"peek_hits\":%lu,\"noise\":%d,\"airtime\":%.4f,\"duty\":%.2f,"
-    "\"refusals\":%lu,\"rx_errors\":%lu},\"ble\":{\"on\":%s,\"name\":\"%s\",\"connected\":%s},\"uptime\":%lu}",
+    "\"refusals\":%lu,\"rx_errors\":%lu},\"ble\":{\"on\":%s,\"name\":\"%s\",\"connected\":%s},"
+    "\"companion\":{\"on\":%s,\"name\":\"%s\",\"ble\":\"%s\",\"pin\":%lu,\"connected\":%s},\"uptime\":%lu}",
     ARB_VERSION, platformName(), app.board_name, modeName(c.mode), c.name,
-    ARB_WITH_RNS ? "true" : "false", ARB_WITH_BLE ? "true" : "false",
+    ARB_WITH_RNS ? "true" : "false", ARB_WITH_BLE ? "true" : "false", ARB_WITH_COMPANION ? "true" : "false",
     app.mc_running ? "true" : "false", (unsigned long)mc.freq_hz, (unsigned long)mc.bw_hz, mc.sf, mc.txp_dbm,
     (unsigned long)s.rx[PROTO_MC], (unsigned long)s.tx[PROTO_MC],
     rns_side.stackRunning() ? "true" : "false", rns_side.hostActive() ? "true" : "false",
@@ -365,6 +400,9 @@ void Console::statusJson(char* out, size_t n) {
     arbiter.airtimeLong(), c.duty_cycle_x100 / 100.0f,
     (unsigned long)s.duty_refusals, (unsigned long)s.rx_errors,
     app.ble_name[0] ? "true" : "false", app.ble_name, ble.connected() ? "true" : "false",
+    app.mc_companion ? "true" : "false", jsonSafe(companionNodeName(), name_esc, sizeof(name_esc)),
+    jsonSafe(companionBleName(), ble_esc, sizeof(ble_esc)), (unsigned long)companionBlePin(),
+    companionConnected() ? "true" : "false",
     (unsigned long)((millis() - app.boot_ms) / 1000));
 }
 
