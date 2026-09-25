@@ -19,9 +19,17 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Mesh.h>
+#ifdef ARB_HOST_TEST
+  // The host tests (test/test_arb_arbiter) build this against the stand-ins
+  // in test/mocks, named by path: PlatformIO puts MeshCore's src/, where the
+  // real Mesh.h and RadioLibWrappers.h live, first on the include path.
+  #include "../test/mocks/Mesh.h"
+  #include "../test/mocks/helpers/radiolib/RadioLibWrappers.h"
+#else
+  #include <Mesh.h>
+  #include <helpers/radiolib/RadioLibWrappers.h>
+#endif
 #include <RadioLib.h>
-#include <helpers/radiolib/RadioLibWrappers.h>
 
 #include "Airtime.h"
 #include "ChannelPlan.h"

@@ -1,7 +1,7 @@
 // Host stand-in for MeshCore's RadioLibWrapper: the members the arbiter
 // reaches (public ones, and the protected ones through WrapperAccess).
 #pragma once
-#include <Mesh.h>
+#include "../../Mesh.h"   // the stand-in next door, not MeshCore's src/Mesh.h
 #include <RadioLib.h>
 
 class RadioLibWrapper {

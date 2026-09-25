@@ -79,9 +79,11 @@ jobs:
 
   # One manifest and every image, in the layout rns.arborisis.com serves
   # (web/public/firmware/arborisis-mesh/ in arborisis-reticulum).
+  # Also after some boards failed (the others still ship), but not when the
+  # builds never ran: there would be nothing to merge.
   bundle:
     needs: build
-    if: always()
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

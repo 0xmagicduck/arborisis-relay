@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <vector>
 
+#define ARB_HOST_TEST 1   // app/RadioArbiter.h takes the stand-ins in test/mocks
 #include "../../app/RadioArbiter.cpp"
 
 using namespace arb;
