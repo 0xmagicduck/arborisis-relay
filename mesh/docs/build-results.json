@@ -1,0 +1,57 @@
+{
+ "arb_heltec_v3": {
+  "error": "",
+  "flash_pct": 59.0,
+  "flash_total": 3342336,
+  "flash_used": 1973617,
+  "ok": true,
+  "ram_pct": 29.3,
+  "ram_total": 327680,
+  "ram_used": 95908,
+  "seconds": 100
+ },
+ "arb_rak_4631": {
+  "error": "",
+  "flash_pct": 97.7,
+  "flash_total": 815104,
+  "flash_used": 796576,
+  "ok": true,
+  "ram_pct": 20.6,
+  "ram_total": 235520,
+  "ram_used": 48468,
+  "seconds": 54
+ },
+ "arb_wio_e5_mini": {
+  "error": "",
+  "flash_pct": 95.8,
+  "flash_total": 229376,
+  "flash_used": 219852,
+  "ok": true,
+  "ram_pct": 43.4,
+  "ram_total": 65536,
+  "ram_used": 28420,
+  "seconds": 38
+ },
+ "arb_xiao_c3": {
+  "error": "",
+  "flash_pct": 65.1,
+  "flash_total": 3145728,
+  "flash_used": 2049258,
+  "ok": true,
+  "ram_pct": 26.8,
+  "ram_total": 327680,
+  "ram_used": 87676,
+  "seconds": 72
+ },
+ "arb_xiao_c6": {
+  "error": "",
+  "flash_pct": 52.3,
+  "flash_total": 3145728,
+  "flash_used": 1646615,
+  "ok": true,
+  "ram_pct": 20.8,
+  "ram_total": 327680,
+  "ram_used": 68236,
+  "seconds": 104
+ }
+}

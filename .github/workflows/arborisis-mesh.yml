@@ -1,0 +1,78 @@
+# Arborisis Mesh: host tests, then one build per board MeshCore describes.
+# The list of boards is mesh/docs/boards.json (tools/gen_envs.py), so a board
+# added by a MeshCore sync is built here without editing this file.
+name: Arborisis Mesh
+
+on:
+  push:
+    paths:
+      - "mesh/**"
+      - "lib/microReticulum/**"
+      - ".github/workflows/arborisis-mesh.yml"
+  pull_request:
+    paths:
+      - "mesh/**"
+      - "lib/microReticulum/**"
+      - ".github/workflows/arborisis-mesh.yml"
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install platformio
+      - name: Generated environments are up to date
+        working-directory: mesh
+        run: |
+          python3 tools/gen_envs.py
+          git diff --exit-code arborisis_envs.ini docs/boards.json
+      - name: Host tests
+        working-directory: mesh
+        run: pio test -e arb_native
+      - name: Real Reticulum against the RNode host protocol (simulated air)
+        working-directory: mesh
+        run: |
+          pip install rns
+          python3 test/sim/e2e_rns.py
+
+  boards:
+    runs-on: ubuntu-latest
+    outputs:
+      envs: ${{ steps.list.outputs.envs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "envs=$(python3 -c 'import json; print(json.dumps([b["env"] for b in json.load(open("mesh/docs/boards.json"))]))')" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [tests, boards]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: ${{ fromJSON(needs.boards.outputs.envs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ matrix.env }}-${{ hashFiles('mesh/platformio.ini', 'mesh/arborisis_envs.ini') }}
+          restore-keys: pio-${{ matrix.env }}-
+      - run: pip install platformio
+      - name: Build
+        working-directory: mesh
+        run: python3 tools/release.py ${{ matrix.env }}
+        env:
+          PIO: pio
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.env }}
+          path: mesh/dist/
+          if-no-files-found: error

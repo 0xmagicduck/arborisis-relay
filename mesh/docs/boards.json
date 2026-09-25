@@ -1,0 +1,942 @@
+[
+ {
+  "env": "arb_ebyte_eora_s3",
+  "extends": "env:Ebyte_EoRa-S3_Repeater",
+  "variant": "ebyte_eora_s3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_gat562_30s_mesh_kit",
+  "extends": "env:GAT562_30S_Mesh_Kit_repeater",
+  "variant": "gat562_30s_mesh_kit",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_gat562_mesh_evb_pro",
+  "extends": "env:GAT562_Mesh_EVB_Pro_repeater",
+  "variant": "gat562_mesh_evb_pro",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_gat562_mesh_tracker_pro",
+  "extends": "env:GAT562_Mesh_Tracker_Pro_repeater",
+  "variant": "gat562_mesh_tracker_pro",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_gat562_mesh_watch13",
+  "extends": "GAT562_Mesh_Watch13",
+  "variant": "gat562_mesh_watch13",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": true,
+  "partitions": null
+ },
+ {
+  "env": "arb_generic_e22_sx1262",
+  "extends": "env:Generic_E22_sx1262_repeater",
+  "variant": "generic-e22",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_generic_e22_sx1268",
+  "extends": "env:Generic_E22_sx1268_repeater",
+  "variant": "generic-e22",
+  "family": "esp32",
+  "radio": "CustomSX1268",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_heltec_ct62",
+  "extends": "env:Heltec_ct62_repeater",
+  "variant": "heltec_ct62",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_heltec_e213",
+  "extends": "env:Heltec_E213_repeater",
+  "variant": "heltec_e213",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "E213Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_e290",
+  "extends": "env:Heltec_E290_repeater",
+  "variant": "heltec_e290",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "E290Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_mesh_solar",
+  "extends": "env:Heltec_mesh_solar_repeater",
+  "variant": "heltec_mesh_solar",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_rc32",
+  "extends": "env:heltec_rc32_repeater",
+  "variant": "heltec_rc32",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "NV3001BDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_rc32_without_display",
+  "extends": "env:heltec_rc32_without_display_repeater",
+  "variant": "heltec_rc32",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_t096",
+  "extends": "env:Heltec_t096_repeater",
+  "variant": "heltec_t096",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "ST7735Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_t1",
+  "extends": "env:Heltec_t1_repeater",
+  "variant": "heltec_t1",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "ST7735Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_t114",
+  "extends": "env:Heltec_t114_repeater",
+  "variant": "heltec_t114",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "ST7789Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_t114_without_display",
+  "extends": "env:Heltec_t114_without_display_repeater",
+  "variant": "heltec_t114",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_t190",
+  "extends": "env:Heltec_T190_repeater_",
+  "variant": "heltec_t190",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7789Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_tower_v2",
+  "extends": "env:Heltec_tower_v2_repeater",
+  "variant": "heltec_tower_v2",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_tracker_v2",
+  "extends": "env:heltec_tracker_v2_repeater",
+  "variant": "heltec_tracker_v2",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7735Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v2",
+  "extends": "env:Heltec_v2_repeater",
+  "variant": "heltec_v2",
+  "family": "esp32",
+  "radio": "CustomSX1276",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v3",
+  "extends": "env:Heltec_v3_repeater",
+  "variant": "heltec_v3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v4",
+  "extends": "env:heltec_v4_repeater",
+  "variant": "heltec_v4",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v4_expansionkit",
+  "extends": "env:heltec_v4_expansionkit_repeater",
+  "variant": "heltec_v4",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v4_r8",
+  "extends": "env:heltec_v4_r8_repeater",
+  "variant": "heltec_v4_r8",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v4_r8_tft",
+  "extends": "env:heltec_v4_r8_tft_repeater",
+  "variant": "heltec_v4_r8",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7789LCDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_v4_tft",
+  "extends": "env:heltec_v4_tft_repeater",
+  "variant": "heltec_v4",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7789LCDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_wireless_paper",
+  "extends": "env:Heltec_Wireless_Paper_repeater",
+  "variant": "heltec_wireless_paper",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "E213Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_wireless_tracker",
+  "extends": "env:Heltec_Wireless_Tracker_repeater",
+  "variant": "heltec_tracker",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7735Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_heltec_wsl3",
+  "extends": "env:Heltec_WSL3_repeater",
+  "variant": "heltec_v3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_ikoka_handheld_nrf_e22_30dbm",
+  "extends": "env:ikoka_handheld_nrf_e22_30dbm_repeater",
+  "variant": "ikoka_handheld_nrf",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_keepteenlt1",
+  "extends": "env:KeepteenLT1_repeater",
+  "variant": "keepteen_lt1",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_t3s3_sx1262",
+  "extends": "env:LilyGo_T3S3_sx1262_repeater",
+  "variant": "lilygo_t3s3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_lilygo_t3s3_sx1276",
+  "extends": "env:LilyGo_T3S3_sx1276_repeater",
+  "variant": "lilygo_t3s3_sx1276",
+  "family": "esp32",
+  "radio": "CustomSX1276",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_lilygo_t_echo",
+  "extends": "env:LilyGo_T-Echo_repeater",
+  "variant": "lilygo_techo",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "GxEPDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_t_echo_card",
+  "extends": "env:LilyGo_T-Echo_Card_repeater",
+  "variant": "lilygo_techo_card",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "U8g2Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_t_echo_lite",
+  "extends": "env:LilyGo_T-Echo-Lite_repeater",
+  "variant": "lilygo_techo_lite",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "GxEPDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_t_impulse_plus",
+  "extends": "env:LilyGo_T_Impulse_Plus_repeater",
+  "variant": "lilygo_t_impulse_plus",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_tbeam_1w",
+  "extends": "env:LilyGo_TBeam_1W_repeater",
+  "variant": "lilygo_tbeam_1w",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_tdeck",
+  "extends": "env:LilyGo_TDeck_repeater",
+  "variant": "lilygo_tdeck",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "ST7789LCDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_teth_elite_sx1262",
+  "extends": "env:LilyGo_TETH_Elite_sx1262_repeater",
+  "variant": "lilygo_teth_elite",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_lilygo_tlora_c6",
+  "extends": "env:LilyGo_Tlora_C6_repeater_",
+  "variant": "lilygo_tlora_c6",
+  "family": "esp32c6",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_lilygo_tlora_v2_1_1_6",
+  "extends": "env:LilyGo_TLora_V2_1_1_6_repeater",
+  "variant": "lilygo_tlora_v2_1",
+  "family": "esp32",
+  "radio": "CustomSX1276",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_m5stack_unit_c6l",
+  "extends": "env:M5Stack_Unit_C6L_repeater",
+  "variant": "m5stack_unit_c6l",
+  "family": "esp32c6",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_mesh_pocket",
+  "extends": "env:Mesh_pocket_repeater",
+  "variant": "mesh_pocket",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "GxEPDDisplay",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_meshadventurer_sx1262",
+  "extends": "env:Meshadventurer_sx1262_repeater",
+  "variant": "meshadventurer",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_meshadventurer_sx1268",
+  "extends": "env:Meshadventurer_sx1268_repeater",
+  "variant": "meshadventurer",
+  "family": "esp32",
+  "radio": "CustomSX1268",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_meshimi",
+  "extends": "env:Meshimi_repeater_",
+  "variant": "xiao_c6",
+  "family": "esp32c6",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_meshnology_w12",
+  "extends": "env:meshnology_w12_repeater",
+  "variant": "meshnology_w12",
+  "family": "esp32",
+  "radio": "CustomLR2021",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_meshtiny",
+  "extends": "Meshtiny",
+  "variant": "meshtiny",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": true,
+  "partitions": null
+ },
+ {
+  "env": "arb_meshtracker_x1",
+  "extends": "env:MeshTracker_X1_repeater",
+  "variant": "meshtracker_x1",
+  "family": "nrf52",
+  "radio": "CustomLR2021",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_minewsemi_me25ls01",
+  "extends": "env:Minewsemi_me25ls01_repeater",
+  "variant": "minewsemi_me25ls01",
+  "family": "nrf52",
+  "radio": "CustomLR1110",
+  "display": "NullDisplayDriver",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_nano_g2_ultra",
+  "extends": "env:Nano_G2_Ultra_repeater",
+  "variant": "nano_g2_ultra",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_nibble_screen_connect",
+  "extends": "env:nibble_screen_connect_repeater_",
+  "variant": "nibble_screen_connect",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_nibble_zero_connect",
+  "extends": "env:nibble_zero_connect_repeater_",
+  "variant": "nibble_zero_connect",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_picow",
+  "extends": "env:PicoW_repeater",
+  "variant": "rpi_picow",
+  "family": "rp2040",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_promicro",
+  "extends": "env:ProMicro_repeater",
+  "variant": "promicro",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_r1neo",
+  "extends": "env:R1Neo_repeater",
+  "variant": "muziworks_r1_neo",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "NullDisplayDriver",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_11310",
+  "extends": "env:RAK_11310_repeater",
+  "variant": "rak11310",
+  "family": "rp2040",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_3112",
+  "extends": "env:RAK_3112_repeater",
+  "variant": "rak3112",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_3401",
+  "extends": "env:RAK_3401_repeater",
+  "variant": "rak3401",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_3x72",
+  "extends": "env:RAK_3x72_repeater",
+  "variant": "rak3x72",
+  "family": "stm32",
+  "radio": "CustomSTM32WLx",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_4631",
+  "extends": "env:RAK_4631_repeater",
+  "variant": "rak4631",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_rak_wismesh_tag",
+  "extends": "env:RAK_WisMesh_Tag_repeater",
+  "variant": "rak_wismesh_tag",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "NullDisplayDriver",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_sensecap_solar",
+  "extends": "env:SenseCap_Solar_repeater",
+  "variant": "sensecap_solar",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_station_g2",
+  "extends": "env:Station_G2_repeater",
+  "variant": "station_g2",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_station_g3_esp32",
+  "extends": "env:Station_G3_ESP32_repeater",
+  "variant": "station_g3_esp32",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_t1000e",
+  "extends": "env:t1000e_repeater",
+  "variant": "t1000-e",
+  "family": "nrf52",
+  "radio": "CustomLR1110",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_t_beam_s3_supreme_sx1262",
+  "extends": "env:T_Beam_S3_Supreme_SX1262_repeater",
+  "variant": "lilygo_tbeam_supreme_SX1262",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_tbeam_sx1262",
+  "extends": "env:Tbeam_SX1262_repeater",
+  "variant": "lilygo_tbeam_SX1262",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_tbeam_sx1276",
+  "extends": "env:Tbeam_SX1276_repeater",
+  "variant": "lilygo_tbeam_SX1276",
+  "family": "esp32",
+  "radio": "CustomSX1276",
+  "display": "SSD1306Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_tenstar_c3_sx1262",
+  "extends": "env:Tenstar_C3_sx1262_repeater",
+  "variant": "tenstar_c3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_tenstar_c3_sx1268",
+  "extends": "env:Tenstar_C3_sx1268_repeater",
+  "variant": "tenstar_c3",
+  "family": "esp32",
+  "radio": "CustomSX1268",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_thinknode_m1",
+  "extends": "env:ThinkNode_M1_repeater",
+  "variant": "thinknode_m1",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_thinknode_m2",
+  "extends": "env:ThinkNode_M2_Repeater",
+  "variant": "thinknode_m2",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_thinknode_m3",
+  "extends": "env:ThinkNode_M3_repeater",
+  "variant": "thinknode_m3",
+  "family": "nrf52",
+  "radio": "CustomLR1110",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_thinknode_m5",
+  "extends": "env:ThinkNode_M5_Repeater",
+  "variant": "thinknode_m5",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": "GxEPDDisplay",
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_thinknode_m6",
+  "extends": "env:ThinkNode_M6_repeater",
+  "variant": "thinknode_m6",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_thinknode_m7",
+  "extends": "env:ThinkNode_M7_repeater",
+  "variant": "thinknode_m7",
+  "family": "esp32",
+  "radio": "CustomLR1110",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_thinknode_m9",
+  "extends": "env:ThinkNode_M9_repeater_",
+  "variant": "thinknode_m9",
+  "family": "esp32",
+  "radio": "CustomLR1110",
+  "display": "ST7789Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_tiny_relay",
+  "extends": "env:Tiny_Relay_repeater",
+  "variant": "tiny_relay",
+  "family": "stm32",
+  "radio": "CustomSTM32WLx",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_waveshare_rp2040_lora",
+  "extends": "env:waveshare_rp2040_lora_repeater",
+  "variant": "waveshare_rp2040_lora",
+  "family": "rp2040",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_why2025_badge",
+  "extends": "env:WHY2025_badge_repeater_",
+  "variant": "xiao_c6",
+  "family": "esp32c6",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_wio_e5",
+  "extends": "env:wio-e5_repeater",
+  "variant": "wio-e5-dev",
+  "family": "stm32",
+  "radio": "CustomSTM32WLx",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_wio_e5_mini",
+  "extends": "env:wio-e5-mini_repeater",
+  "variant": "wio-e5-mini",
+  "family": "stm32",
+  "radio": "CustomSTM32WLx",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_wio_wm1110",
+  "extends": "env:wio_wm1110_repeater",
+  "variant": "wio_wm1110",
+  "family": "nrf52",
+  "radio": "CustomLR1110",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_wiotrackerl1",
+  "extends": "env:WioTrackerL1_repeater",
+  "variant": "wio-tracker-l1",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "SH1106Display",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_wiotrackerl1eink",
+  "extends": "WioTrackerL1Eink",
+  "variant": "wio-tracker-l1-eink",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": true,
+  "partitions": null
+ },
+ {
+  "env": "arb_xiao_c3",
+  "extends": "env:Xiao_C3_repeater",
+  "variant": "xiao_c3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_xiao_c6",
+  "extends": "env:Xiao_C6_repeater_",
+  "variant": "xiao_c6",
+  "family": "esp32c6",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": "huge_app.csv"
+ },
+ {
+  "env": "arb_xiao_nrf52",
+  "extends": "env:Xiao_nrf52_repeater",
+  "variant": "xiao_nrf52",
+  "family": "nrf52",
+  "radio": "CustomSX1262",
+  "display": "NullDisplayDriver",
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_xiao_rp2040",
+  "extends": "env:Xiao_rp2040_repeater",
+  "variant": "xiao_rp2040",
+  "family": "rp2040",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_xiao_s3",
+  "extends": "env:Xiao_S3_repeater",
+  "variant": "xiao_s3",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ },
+ {
+  "env": "arb_xiao_s3_wio",
+  "extends": "env:Xiao_S3_WIO_repeater",
+  "variant": "xiao_s3_wio",
+  "family": "esp32",
+  "radio": "CustomSX1262",
+  "display": null,
+  "headless": false,
+  "partitions": null
+ }
+]
