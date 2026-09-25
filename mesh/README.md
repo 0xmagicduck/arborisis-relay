@@ -53,12 +53,17 @@ Les noms d'environnements sont dans `arborisis_envs.ini` (générés) et dans
 
 ## Flasher
 
-Depuis le navigateur : la page d'installation de **rns.arborisis.com** (dépôt
-`arborisis-reticulum`) lit le `manifest.json` de `tools/release.py` — même
-format que celui du relais : taille et SHA-256 de chaque fichier, vérifiés
-avant l'écriture — servi sous `/firmware/arborisis-mesh/`. La CI de ce dépôt
-produit ce répertoire complet pour toutes les cartes (artefact
-`arborisis-mesh-firmware`). À la main :
+Depuis le navigateur : **rns.arborisis.com/mesh** (dépôt
+`arborisis-reticulum`, à côté de `/relay`). La page choisit la carte, lit la
+puce d'un ESP32 et l'écrit en Web Serial, remet l'UF2 ou le HEX des autres
+familles, puis configure la carte par cette même console (`arb json`,
+`arb mode`, `arb name`, `arb rns radio`, `arb ble`…). Elle lit le
+`manifest.json` de `tools/release.py` — même contrat que celui du relais :
+taille et SHA-256 de chaque fichier, vérifiés avant l'écriture — servi sous
+`/firmware/arborisis-mesh/`. Le site en publie une sélection de cartes ; la
+CI de ce dépôt produit le répertoire complet pour toutes (artefact
+`arborisis-mesh-firmware`), à déposer tel quel dans
+`web/public/firmware/arborisis-mesh/` du site. À la main :
 
 | Famille | Fichier | Comment |
 |---|---|---|

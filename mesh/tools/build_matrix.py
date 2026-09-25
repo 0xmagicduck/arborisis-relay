@@ -6,6 +6,7 @@
     python3 tools/build_matrix.py arb_heltec_v3 arb_rak_4631
     python3 tools/build_matrix.py --failed        # only those that failed last time
     python3 tools/build_matrix.py --clean         # remove each build dir afterwards (disk)
+    python3 tools/build_matrix.py --reclassify    # re-read the logs of the failures, build nothing
 
 Builds run strictly in sequence: PlatformIO cleans every build directory
 when platformio.ini changes and shares one package store, so two builds at
@@ -29,6 +30,24 @@ RESULTS = ROOT / "docs" / "build-results.json"
 PIO = os.environ.get("PIO", shutil.which("pio") or str(ROOT.parent / ".venv" / "bin" / "pio"))
 
 
+def refused_download(text):
+    """A dependency that could not be downloaded is not the code's failure
+    (a sandbox, an offline machine): the URL, or None."""
+    d = re.search(r"PackageException: Got the unrecognized status code '(\d+)' when downloaded (\S+)", text)
+    return f"download refused ({d.group(1)}): {d.group(2)}" if d else None
+
+
+def reclassify(results, logdir):
+    for env, r in results.items():
+        log = logdir / f"{env}.log"
+        if r.get("ok") or not log.exists():
+            continue
+        why = refused_download(log.read_text(errors="ignore"))
+        if why:
+            r["blocked"], r["error"] = True, why
+    RESULTS.write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
+
+
 def main(argv):
     clean = "--clean" in argv
     failed_only = "--failed" in argv
@@ -41,6 +60,10 @@ def main(argv):
             names = [n for n in names if results.get(n, {}).get("ok") is not True]
     logdir = ROOT / ".pio" / "matrix-logs"
     logdir.mkdir(parents=True, exist_ok=True)
+    if "--reclassify" in argv:
+        reclassify(results, logdir)
+        subprocess.call([sys.executable, str(ROOT / "tools" / "matrix.py")], cwd=ROOT)
+        return 0
 
     for i, env in enumerate(names, 1):
         t0 = time.time()
@@ -55,12 +78,9 @@ def main(argv):
         if rc != 0:
             m = re.search(r"^.*(error:|overflowed by|Error \d).*$", text, re.M)
             err = m.group(0).strip()[:300] if m else "failed (see log)"
-            # A dependency that could not be downloaded is not the code's
-            # failure (a sandbox or an offline machine): say which URL.
-            d = re.search(r"PackageException: Got the unrecognized status code '(\d+)' when downloaded (\S+)", text)
-            if d:
-                blocked = True
-                err = f"download refused ({d.group(1)}): {d.group(2)}"
+            why = refused_download(text)
+            if why:
+                blocked, err = True, why
         results[env] = {
             "ok": rc == 0,
             "ram_pct": float(ram[-1][0]) if ram else None,
