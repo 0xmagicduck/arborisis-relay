@@ -60,6 +60,7 @@ public:
   std::vector<uint8_t> rx_buf;
   size_t next_air = 0;     // first air entry that may still end in the future
   unsigned tx_count = 0, retunes = 0;
+  uint32_t finish_tx_ms = 0;   // virtual time that passes inside finishTransmit()
 
   float tsym() const { return symbolTimeMs(bw, sf); }
 
@@ -149,7 +150,11 @@ public:
     tx_count++;
     return RADIOLIB_ERR_NONE;
   }
-  int16_t finishTransmit() override { mode = STBY; return RADIOLIB_ERR_NONE; }
+  int16_t finishTransmit() override {
+    g_sim_now_ms += finish_tx_ms;
+    mode = STBY;
+    return RADIOLIB_ERR_NONE;
+  }
   size_t getPacketLength(bool) override { return rx_buf.size(); }
   int16_t readData(uint8_t* d, size_t len) override {
     memcpy(d, rx_buf.data(), len);
@@ -411,6 +416,36 @@ TEST(Arbiter, TransmitsEachProtocolOnItsChannelWithItsPreamble) {
   EXPECT_EQ(ours[2]->preamble, 32);
   EXPECT_EQ(arbiter.stats().tx[PROTO_RNS], 2u);
   EXPECT_EQ(arbiter.stats().tx[PROTO_MC], 1u);
+}
+
+TEST(Arbiter, SplitPacketSurvivesClockTickInTxDone) {
+  // On real hardware, millis() can tick while onTxDone() talks to the chip,
+  // before it starts the second half of a split packet. The second half
+  // must still go out, and no transmission may time out.
+  g_sim_now_ms = 0;
+  g_air.clear();
+  SimRadio radio;
+  radio.finish_tx_ms = 1;
+  mesh::MainBoard board;
+  SimWrapper drv(radio, board);
+  RadioArbiter arbiter;
+  g_radio = &radio;
+  arbiter.begin(drv, board);
+  arbiter.setChannel(PROTO_MC, MC_EU);
+  arbiter.setChannel(PROTO_RNS, RNS_BE);
+  arbiter.setEnabled(true, true);
+  for (int i = 0; i < 5; i++) { arbiter.loop(); step(); }
+
+  std::vector<uint8_t> pkt(400, 0x5A);
+  ASSERT_TRUE(arbiter.rnsEnqueue(pkt.data(), (uint16_t)pkt.size()));
+  for (int i = 0; i < 3000; i++) { arbiter.loop(); step(); }
+  std::vector<const AirTx*> ours;
+  for (auto& t : g_air) if (t.ours) ours.push_back(&t);
+  ASSERT_EQ(ours.size(), 2u);
+  EXPECT_EQ(ours[0]->data.size(), 255u);
+  EXPECT_EQ(ours[1]->data.size(), 400u - 254u + 1u);
+  EXPECT_EQ(arbiter.stats().tx_timeouts, 0u);
+  EXPECT_EQ(arbiter.stats().tx[PROTO_RNS], 2u);
 }
 
 TEST(Arbiter, DutyCycleBudgetIsShared) {

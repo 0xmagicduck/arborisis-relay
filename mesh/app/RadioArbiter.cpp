@@ -177,7 +177,7 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
 // ── Main loop ──────────────────────────────────────────────────────────────
 
 void RadioArbiter::loop() {
-  const uint32_t now = millis();
+  uint32_t now = millis();
 
   if (_irq) {
     _irq = false;
@@ -188,6 +188,11 @@ void RadioArbiter::loop() {
       case S_CAD:    onCadDone(); break;
       default: break;
     }
+    // A handler can start a transmission: the second half of a split
+    // packet, or a TX after listen-before-talk. startTx() then sets
+    // _tx_started from a later millis(). With the old `now`, elapsed()
+    // wraps and the TX timeout below aborts the new transmission at once.
+    now = millis();
   }
 
   switch (_state) {
