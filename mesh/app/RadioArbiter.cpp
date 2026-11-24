@@ -169,6 +169,12 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
   _tx_len = flen;
   _tx_started = millis();
   _tx_timeout = timeOnAirMs(_ch[p], flen) * 3 / 2 + 250;
+#if defined(USE_LR2021) && !defined(ARB_HOST_TEST)
+  // RadioLib writes each frame into the LR2021 TX FIFO and does not clear
+  // it first. An aborted transmission leaves its unsent bytes there, and
+  // every later frame then goes out shifted. Start from an empty FIFO.
+  static_cast<LR2021*>(_phy)->clearTxFifo();
+#endif
   int16_t err = _phy->startTransmit(const_cast<uint8_t*>(frame), flen);
   _state = S_TX;
   if (err != RADIOLIB_ERR_NONE) onTxDone(false);
