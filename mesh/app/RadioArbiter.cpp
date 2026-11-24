@@ -18,6 +18,19 @@ struct WrapperAccess : public RadioLibWrapper {
 
 inline bool elapsed(uint32_t now, uint32_t since, uint32_t ms) { return (uint32_t)(now - since) >= ms; }
 
+// The LR2021 stays in Rx after readData(). In Rx it rejects configuration
+// commands, startReceive(), startChannelScan() and startTransmit() with
+// RADIOLIB_ERR_SPI_CMD_INVALID (-706). Call this before each of them.
+// MeshCore's RadioLibWrapper::startRecv() does the same for this chip only,
+// so the other chips keep their behaviour.
+inline void standbyBeforeCommand(PhysicalLayer* phy) {
+#if defined(USE_LR2021)
+  phy->standby();
+#else
+  (void)phy;
+#endif
+}
+
 }  // namespace
 
 RadioArbiter* RadioArbiter::_self = nullptr;
@@ -106,6 +119,7 @@ void RadioArbiter::startListen() {
     }
     return;
   }
+  standbyBeforeCommand(_phy);
   program((Proto)_plan.listen, _plan.listen_preamble);
   _irq = false;
   int16_t err = _phy->startReceive();
@@ -113,6 +127,7 @@ void RadioArbiter::startListen() {
 }
 
 void RadioArbiter::startCad(Proto p, CadPurpose why) {
+  standbyBeforeCommand(_phy);
   program(p, _ch[p].preamble);
   _irq = false;
   int16_t err = _phy->startChannelScan();
@@ -142,6 +157,7 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
     frame = _rns_frames.frames[_rns_frame_idx];
     flen = _rns_frames.frame_len[_rns_frame_idx];
   }
+  standbyBeforeCommand(_phy);
   program(p, _ch[p].preamble);
   if (_prog_txp != _ch[p].txp_dbm) {
     _drv->setTxPower(_ch[p].txp_dbm);
@@ -312,6 +328,7 @@ void RadioArbiter::enterDwell(Proto p, uint32_t now) {
   const uint16_t pre = ch.preamble > 32 ? ch.preamble : 32;
   _dwell_deadline = now + (uint32_t)(tsym * (pre + 24)) + 20;
   _dwell_hard_deadline = now + (uint32_t)(tsym * pre) + timeOnAirMs(ch, RNODE_FRAME_MAX) + 50;
+  standbyBeforeCommand(_phy);
   _irq = false;
   _phy->startReceive();
   _state = S_DWELL;
@@ -404,6 +421,7 @@ bool RadioArbiter::mcChannelBusy() {
 
   // MeshCore is the peeked channel: look at it now (a CAD, ~10–20 ms).
   if (_state != S_LISTEN || receivingPacket()) return true;
+  standbyBeforeCommand(_phy);
   program(PROTO_MC, _ch[PROTO_MC].preamble);
   _irq = false;
   if (_phy->startChannelScan() != RADIOLIB_ERR_NONE) { _state = S_IDLE; return false; }

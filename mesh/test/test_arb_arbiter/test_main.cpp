@@ -10,7 +10,10 @@
 //     before the preamble ends) and stayed until the packet ended;
 //   • retuning, transmitting or scanning interrupts reception;
 //   • a CAD detects a packet whose preamble covers the whole CAD window;
-//   • nothing is received while transmitting.
+//   • nothing is received while transmitting;
+//   • with USE_LR2021 defined (test_arb_lr2021), the radio stays in receive
+//     mode after a packet and rejects configuration, receive, CAD and
+//     transmit commands until it is in standby, like the LR2021.
 //
 // The tests measure how much of each network's traffic the arbiter
 // catches in each mode, with a fast main loop and with one that stalls
@@ -60,7 +63,14 @@ public:
 
   float tsym() const { return symbolTimeMs(bw, sf); }
 
+#if defined(USE_LR2021)
+  bool rejectsCommands() const { return mode == RX; }
+#else
+  bool rejectsCommands() const { return false; }
+#endif
+
   void tune(float f_mhz, float bw_khz, uint8_t s, uint8_t c) {
+    if (rejectsCommands()) return;   // the wrapper's setParams() ignores the errors
     // RadioLib takes MHz / kHz as floats, like the arbiter passes them: round
     // back to the 100 Hz the chips resolve.
     uint32_t f = (uint32_t)lround(f_mhz * 1e4) * 100, b = (uint32_t)lround(bw_khz * 10.0) * 100;
@@ -110,9 +120,15 @@ public:
   }
 
   void setPacketReceivedAction(void (*f)(void)) override { action = f; }
-  int16_t startReceive() override { mode = RX; rx_since = g_sim_now_ms; return RADIOLIB_ERR_NONE; }
+  int16_t startReceive() override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
+    mode = RX;
+    rx_since = g_sim_now_ms;
+    return RADIOLIB_ERR_NONE;
+  }
   int16_t standby() override { mode = STBY; return RADIOLIB_ERR_NONE; }
   int16_t startChannelScan() override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
     mode = CAD;
     op_start = g_sim_now_ms;
     op_end = op_start + (uint32_t)ceilf((sf <= 8 ? 3.0f : 5.0f) * tsym());
@@ -120,6 +136,7 @@ public:
   }
   int16_t getChannelScanResult() override { return cad_hit ? RADIOLIB_LORA_DETECTED : RADIOLIB_CHANNEL_FREE; }
   int16_t startTransmit(const uint8_t* d, size_t len, uint8_t) override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
     mode = TX;
     AirTx t;
     t.freq = freq; t.bw = bw; t.sf = sf; t.cr = cr; t.t0 = g_sim_now_ms; t.preamble = preamble;
@@ -141,7 +158,11 @@ public:
   }
   float getRSSI() override { return -95.0f; }
   float getSNR() override { return 4.0f; }
-  int16_t setPreambleLength(size_t len) override { preamble = (uint16_t)len; return RADIOLIB_ERR_NONE; }
+  int16_t setPreambleLength(size_t len) override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
+    preamble = (uint16_t)len;
+    return RADIOLIB_ERR_NONE;
+  }
 };
 
 class SimWrapper : public RadioLibWrapper {
