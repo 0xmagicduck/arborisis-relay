@@ -202,7 +202,24 @@ bool BleLink::begin(const char* name, uint32_t pin) {
 bool BleLink::connected() { return _running && _connected; }
 
 void BleLink::flush() {
-  if (connected() && _authenticated && _tx_n) g_uart.write(_tx, _tx_n);
+  // BLECharacteristic::notify() cuts each write to the characteristic's
+  // max length, the maximum MTU (247 bytes with BANDWIDTH_MAX). It drops
+  // the rest without an error. A KISS frame for a full LoRa packet is
+  // longer, so write the frame in pieces of one notification each.
+  if (connected() && _authenticated && _tx_n) {
+    constexpr uint16_t kAttMtuMin = 23;      // the BLE default ATT MTU
+    constexpr uint16_t kNotifyHeader = 3;    // ATT opcode and handle
+    BLEConnection* conn = Bluefruit.Connection(Bluefruit.connHandle());
+    uint16_t mtu = conn ? conn->getMtu() : kAttMtuMin;
+    if (mtu < kAttMtuMin) mtu = kAttMtuMin;
+    const size_t chunk = mtu - kNotifyHeader;
+    for (size_t off = 0; off < _tx_n; off += chunk) {
+      const size_t n = _tx_n - off < chunk ? _tx_n - off : chunk;
+      // write() returns 0 when the link is gone or no notification buffer
+      // came free in 100 ms. Drop the rest of the frame.
+      if (g_uart.write(_tx + off, n) != n) break;
+    }
+  }
   _tx_n = 0;
 }
 
