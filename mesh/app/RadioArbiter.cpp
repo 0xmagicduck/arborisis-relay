@@ -311,6 +311,16 @@ void RadioArbiter::onRxDone() {
   size_t len = _phy->getPacketLength();
   if (len > 0 && len <= RNODE_FRAME_MAX) {
     int16_t err = _phy->readData(buf, len);
+#if defined(USE_LR2021) && !defined(ARB_HOST_TEST)
+    // The wrapper can clear HEADER_VALID while a packet arrives. A packet
+    // whose payload CRC passed is intact all the same.
+    if (err == RADIOLIB_ERR_LORA_HEADER_DAMAGED) {
+      uint8_t cr = 0; bool crc = false;
+      static_cast<LR2021*>(_phy)->getLoRaPacketStatus(&cr, &crc);
+      const uint32_t irq = _phy->getIrqFlags();
+      if (crc && (irq & RADIOLIB_LR2021_IRQ_RX_DONE) && !(irq & RADIOLIB_LR2021_IRQ_CRC_ERROR)) err = RADIOLIB_ERR_NONE;
+    }
+#endif
     if (err == RADIOLIB_ERR_NONE) {
       float rssi = _phy->getRSSI();
       float snr = _phy->getSNR();
