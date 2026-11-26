@@ -74,7 +74,7 @@ class CustomLR2021 : public LR2021 {
       // forget the previous packet, so a back-to-back packet doesn't inherit its timestamp
       _activityAt = 0; _headerSeen = false;
       // include the PREAMBLE_DETECTED irq bit in reported flags
-      return LR2021::startReceive(RADIOLIB_LR2021_RX_TIMEOUT_INF, RADIOLIB_IRQ_RX_DEFAULT_FLAGS | (1UL << RADIOLIB_LR2021_IRQ_PREAMBLE_DETECTED), RADIOLIB_IRQ_RX_DEFAULT_MASK, 0);
+      return LR2021::startReceive(RADIOLIB_LR2021_RX_TIMEOUT_INF, RADIOLIB_IRQ_RX_DEFAULT_FLAGS | (1UL << RADIOLIB_IRQ_PREAMBLE_DETECTED), RADIOLIB_IRQ_RX_DEFAULT_MASK, 0);
     }
 
     bool isReceiving() {
