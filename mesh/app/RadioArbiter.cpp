@@ -18,6 +18,19 @@ struct WrapperAccess : public RadioLibWrapper {
 
 inline bool elapsed(uint32_t now, uint32_t since, uint32_t ms) { return (uint32_t)(now - since) >= ms; }
 
+// The LR2021 stays in Rx after readData(). In Rx it rejects configuration
+// commands, startReceive(), startChannelScan() and startTransmit() with
+// RADIOLIB_ERR_SPI_CMD_INVALID (-706). Call this before each of them.
+// MeshCore's RadioLibWrapper::startRecv() does the same for this chip only,
+// so the other chips keep their behaviour.
+inline void standbyBeforeCommand(PhysicalLayer* phy) {
+#if defined(USE_LR2021)
+  phy->standby();
+#else
+  (void)phy;
+#endif
+}
+
 }  // namespace
 
 RadioArbiter* RadioArbiter::_self = nullptr;
@@ -106,6 +119,7 @@ void RadioArbiter::startListen() {
     }
     return;
   }
+  standbyBeforeCommand(_phy);
   program((Proto)_plan.listen, _plan.listen_preamble);
   _irq = false;
   int16_t err = _phy->startReceive();
@@ -113,6 +127,7 @@ void RadioArbiter::startListen() {
 }
 
 void RadioArbiter::startCad(Proto p, CadPurpose why) {
+  standbyBeforeCommand(_phy);
   program(p, _ch[p].preamble);
   _irq = false;
   int16_t err = _phy->startChannelScan();
@@ -142,6 +157,7 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
     frame = _rns_frames.frames[_rns_frame_idx];
     flen = _rns_frames.frame_len[_rns_frame_idx];
   }
+  standbyBeforeCommand(_phy);
   program(p, _ch[p].preamble);
   if (_prog_txp != _ch[p].txp_dbm) {
     _drv->setTxPower(_ch[p].txp_dbm);
@@ -153,6 +169,12 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
   _tx_len = flen;
   _tx_started = millis();
   _tx_timeout = timeOnAirMs(_ch[p], flen) * 3 / 2 + 250;
+#if defined(USE_LR2021) && !defined(ARB_HOST_TEST)
+  // RadioLib writes each frame into the LR2021 TX FIFO and does not clear
+  // it first. An aborted transmission leaves its unsent bytes there, and
+  // every later frame then goes out shifted. Start from an empty FIFO.
+  static_cast<LR2021*>(_phy)->clearTxFifo();
+#endif
   int16_t err = _phy->startTransmit(const_cast<uint8_t*>(frame), flen);
   _state = S_TX;
   if (err != RADIOLIB_ERR_NONE) onTxDone(false);
@@ -161,7 +183,7 @@ void RadioArbiter::startTx(Proto p, const uint8_t* buf, uint16_t len) {
 // ── Main loop ──────────────────────────────────────────────────────────────
 
 void RadioArbiter::loop() {
-  const uint32_t now = millis();
+  uint32_t now = millis();
 
   if (_irq) {
     _irq = false;
@@ -172,6 +194,11 @@ void RadioArbiter::loop() {
       case S_CAD:    onCadDone(); break;
       default: break;
     }
+    // A handler can start a transmission: the second half of a split
+    // packet, or a TX after listen-before-talk. startTx() then sets
+    // _tx_started from a later millis(). With the old `now`, elapsed()
+    // wraps and the TX timeout below aborts the new transmission at once.
+    now = millis();
   }
 
   switch (_state) {
@@ -284,6 +311,16 @@ void RadioArbiter::onRxDone() {
   size_t len = _phy->getPacketLength();
   if (len > 0 && len <= RNODE_FRAME_MAX) {
     int16_t err = _phy->readData(buf, len);
+#if defined(USE_LR2021) && !defined(ARB_HOST_TEST)
+    // The wrapper can clear HEADER_VALID while a packet arrives. A packet
+    // whose payload CRC passed is intact all the same.
+    if (err == RADIOLIB_ERR_LORA_HEADER_DAMAGED) {
+      uint8_t cr = 0; bool crc = false;
+      static_cast<LR2021*>(_phy)->getLoRaPacketStatus(&cr, &crc);
+      const uint32_t irq = _phy->getIrqFlags();
+      if (crc && (irq & RADIOLIB_LR2021_IRQ_RX_DONE) && !(irq & RADIOLIB_LR2021_IRQ_CRC_ERROR)) err = RADIOLIB_ERR_NONE;
+    }
+#endif
     if (err == RADIOLIB_ERR_NONE) {
       float rssi = _phy->getRSSI();
       float snr = _phy->getSNR();
@@ -312,6 +349,7 @@ void RadioArbiter::enterDwell(Proto p, uint32_t now) {
   const uint16_t pre = ch.preamble > 32 ? ch.preamble : 32;
   _dwell_deadline = now + (uint32_t)(tsym * (pre + 24)) + 20;
   _dwell_hard_deadline = now + (uint32_t)(tsym * pre) + timeOnAirMs(ch, RNODE_FRAME_MAX) + 50;
+  standbyBeforeCommand(_phy);
   _irq = false;
   _phy->startReceive();
   _state = S_DWELL;
@@ -404,6 +442,7 @@ bool RadioArbiter::mcChannelBusy() {
 
   // MeshCore is the peeked channel: look at it now (a CAD, ~10–20 ms).
   if (_state != S_LISTEN || receivingPacket()) return true;
+  standbyBeforeCommand(_phy);
   program(PROTO_MC, _ch[PROTO_MC].preamble);
   _irq = false;
   if (_phy->startChannelScan() != RADIOLIB_ERR_NONE) { _state = S_IDLE; return false; }

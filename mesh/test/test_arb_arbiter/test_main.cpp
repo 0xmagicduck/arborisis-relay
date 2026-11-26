@@ -10,7 +10,10 @@
 //     before the preamble ends) and stayed until the packet ended;
 //   • retuning, transmitting or scanning interrupts reception;
 //   • a CAD detects a packet whose preamble covers the whole CAD window;
-//   • nothing is received while transmitting.
+//   • nothing is received while transmitting;
+//   • with USE_LR2021 defined (test_arb_lr2021), the radio stays in receive
+//     mode after a packet and rejects configuration, receive, CAD and
+//     transmit commands until it is in standby, like the LR2021.
 //
 // The tests measure how much of each network's traffic the arbiter
 // catches in each mode, with a fast main loop and with one that stalls
@@ -57,10 +60,18 @@ public:
   std::vector<uint8_t> rx_buf;
   size_t next_air = 0;     // first air entry that may still end in the future
   unsigned tx_count = 0, retunes = 0;
+  uint32_t finish_tx_ms = 0;   // virtual time that passes inside finishTransmit()
 
   float tsym() const { return symbolTimeMs(bw, sf); }
 
+#if defined(USE_LR2021)
+  bool rejectsCommands() const { return mode == RX; }
+#else
+  bool rejectsCommands() const { return false; }
+#endif
+
   void tune(float f_mhz, float bw_khz, uint8_t s, uint8_t c) {
+    if (rejectsCommands()) return;   // the wrapper's setParams() ignores the errors
     // RadioLib takes MHz / kHz as floats, like the arbiter passes them: round
     // back to the 100 Hz the chips resolve.
     uint32_t f = (uint32_t)lround(f_mhz * 1e4) * 100, b = (uint32_t)lround(bw_khz * 10.0) * 100;
@@ -110,9 +121,15 @@ public:
   }
 
   void setPacketReceivedAction(void (*f)(void)) override { action = f; }
-  int16_t startReceive() override { mode = RX; rx_since = g_sim_now_ms; return RADIOLIB_ERR_NONE; }
+  int16_t startReceive() override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
+    mode = RX;
+    rx_since = g_sim_now_ms;
+    return RADIOLIB_ERR_NONE;
+  }
   int16_t standby() override { mode = STBY; return RADIOLIB_ERR_NONE; }
   int16_t startChannelScan() override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
     mode = CAD;
     op_start = g_sim_now_ms;
     op_end = op_start + (uint32_t)ceilf((sf <= 8 ? 3.0f : 5.0f) * tsym());
@@ -120,6 +137,7 @@ public:
   }
   int16_t getChannelScanResult() override { return cad_hit ? RADIOLIB_LORA_DETECTED : RADIOLIB_CHANNEL_FREE; }
   int16_t startTransmit(const uint8_t* d, size_t len, uint8_t) override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
     mode = TX;
     AirTx t;
     t.freq = freq; t.bw = bw; t.sf = sf; t.cr = cr; t.t0 = g_sim_now_ms; t.preamble = preamble;
@@ -132,7 +150,11 @@ public:
     tx_count++;
     return RADIOLIB_ERR_NONE;
   }
-  int16_t finishTransmit() override { mode = STBY; return RADIOLIB_ERR_NONE; }
+  int16_t finishTransmit() override {
+    g_sim_now_ms += finish_tx_ms;
+    mode = STBY;
+    return RADIOLIB_ERR_NONE;
+  }
   size_t getPacketLength(bool) override { return rx_buf.size(); }
   int16_t readData(uint8_t* d, size_t len) override {
     memcpy(d, rx_buf.data(), len);
@@ -141,7 +163,11 @@ public:
   }
   float getRSSI() override { return -95.0f; }
   float getSNR() override { return 4.0f; }
-  int16_t setPreambleLength(size_t len) override { preamble = (uint16_t)len; return RADIOLIB_ERR_NONE; }
+  int16_t setPreambleLength(size_t len) override {
+    if (rejectsCommands()) return RADIOLIB_ERR_SPI_CMD_INVALID;
+    preamble = (uint16_t)len;
+    return RADIOLIB_ERR_NONE;
+  }
 };
 
 class SimWrapper : public RadioLibWrapper {
@@ -390,6 +416,36 @@ TEST(Arbiter, TransmitsEachProtocolOnItsChannelWithItsPreamble) {
   EXPECT_EQ(ours[2]->preamble, 32);
   EXPECT_EQ(arbiter.stats().tx[PROTO_RNS], 2u);
   EXPECT_EQ(arbiter.stats().tx[PROTO_MC], 1u);
+}
+
+TEST(Arbiter, SplitPacketSurvivesClockTickInTxDone) {
+  // On real hardware, millis() can tick while onTxDone() talks to the chip,
+  // before it starts the second half of a split packet. The second half
+  // must still go out, and no transmission may time out.
+  g_sim_now_ms = 0;
+  g_air.clear();
+  SimRadio radio;
+  radio.finish_tx_ms = 1;
+  mesh::MainBoard board;
+  SimWrapper drv(radio, board);
+  RadioArbiter arbiter;
+  g_radio = &radio;
+  arbiter.begin(drv, board);
+  arbiter.setChannel(PROTO_MC, MC_EU);
+  arbiter.setChannel(PROTO_RNS, RNS_BE);
+  arbiter.setEnabled(true, true);
+  for (int i = 0; i < 5; i++) { arbiter.loop(); step(); }
+
+  std::vector<uint8_t> pkt(400, 0x5A);
+  ASSERT_TRUE(arbiter.rnsEnqueue(pkt.data(), (uint16_t)pkt.size()));
+  for (int i = 0; i < 3000; i++) { arbiter.loop(); step(); }
+  std::vector<const AirTx*> ours;
+  for (auto& t : g_air) if (t.ours) ours.push_back(&t);
+  ASSERT_EQ(ours.size(), 2u);
+  EXPECT_EQ(ours[0]->data.size(), 255u);
+  EXPECT_EQ(ours[1]->data.size(), 400u - 254u + 1u);
+  EXPECT_EQ(arbiter.stats().tx_timeouts, 0u);
+  EXPECT_EQ(arbiter.stats().tx[PROTO_RNS], 2u);
 }
 
 TEST(Arbiter, DutyCycleBudgetIsShared) {

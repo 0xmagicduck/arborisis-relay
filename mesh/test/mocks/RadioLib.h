@@ -7,6 +7,7 @@
 #define RADIOLIB_PREAMBLE_DETECTED  (-14)
 #define RADIOLIB_CHANNEL_FREE       (-15)
 #define RADIOLIB_LORA_DETECTED      (-702)
+#define RADIOLIB_ERR_SPI_CMD_INVALID (-706)
 
 class PhysicalLayer {
 public:
